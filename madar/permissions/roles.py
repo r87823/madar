@@ -1,0 +1,21 @@
+MADAR_ADMIN = "Madar Admin"
+MADAR_EMPLOYEE = "Madar Employee"
+MADAR_BRANCH_USER = "Madar Branch User"
+MADAR_BRANCH_SUPERVISOR = "Madar Branch Supervisor"
+MADAR_PRODUCTION_USER = "Madar Production User"
+MADAR_DRIVER = "Madar Driver"
+MADAR_CASHIER = "Madar Cashier"
+MADAR_ACCOUNTANT = "Madar Accountant"
+
+
+MADAR_ROLES = [
+    MADAR_ADMIN,
+    MADAR_EMPLOYEE,
+    MADAR_BRANCH_USER,
+    MADAR_BRANCH_SUPERVISOR,
+    MADAR_PRODUCTION_USER,
+    MADAR_DRIVER,
+    MADAR_CASHIER,
+    MADAR_ACCOUNTANT,
+]
+

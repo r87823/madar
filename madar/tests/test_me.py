@@ -29,7 +29,7 @@ class CurrentUserContextApiTest(unittest.TestCase):
         fake_frappe = types.SimpleNamespace(
             whitelist=lambda *args, **kwargs: lambda fn: fn,
             session=types.SimpleNamespace(user="mobile@example.com", sid="hidden"),
-            get_roles=lambda user: ["Employee", "Driver"],
+            get_roles=lambda user: ["Employee", "Madar Driver"],
             get_meta=lambda doctype: _FakeMeta(["user_id"]),
             get_all=lambda doctype, filters=None, fields=None, limit=20: [],
         )
@@ -43,7 +43,7 @@ class CurrentUserContextApiTest(unittest.TestCase):
             {
                 "user": "mobile@example.com",
                 "full_name": "Mobile User",
-                "roles": ["Employee", "Driver"],
+                "roles": ["Employee", "Madar Driver"],
                 "permissions": [
                     "attendance.check_in",
                     "attendance.check_out",

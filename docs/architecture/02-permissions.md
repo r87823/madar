@@ -46,6 +46,34 @@ Initial permission keys include:
 
 The current registry maps these keys to Frappe roles as a foundation step. `system.full_access` grants every Madar permission key. Future tasks may replace or extend this mapping with DocType-backed rules, but endpoint code should continue to ask permission-key questions.
 
+## Madar Roles
+
+Madar bootstraps app-specific Frappe Roles during migration:
+
+- `Madar Admin`.
+- `Madar Employee`.
+- `Madar Branch User`.
+- `Madar Branch Supervisor`.
+- `Madar Production User`.
+- `Madar Driver`.
+- `Madar Cashier`.
+- `Madar Accountant`.
+
+These roles are created idempotently. If a role already exists, migration keeps it and continues. The bootstrap must not assign roles to users, create users, or create Employee records.
+
+The permission registry maps Madar roles to permission keys:
+
+- `Madar Admin` grants `system.full_access`.
+- `Madar Employee` grants attendance check-in/check-out and employee self-service permissions.
+- `Madar Branch User` grants order create and submit-for-approval permissions.
+- `Madar Branch Supervisor` grants order approval permission.
+- `Madar Production User` grants production work-order view/update permissions.
+- `Madar Driver` grants delivery batch update, payment collection, and own cashbox submit permissions.
+- `Madar Cashier` grants payment collection and own cashbox submit permissions.
+- `Madar Accountant` grants accounting sync log view permission.
+
+Frappe built-in `Administrator`, `System Manager`, and `Employee` mappings remain supported for compatibility and system administration. Future protected actions should use permission keys and scope helpers, not raw role checks.
+
 ## Current User Context
 
 The authenticated mobile context endpoint is:

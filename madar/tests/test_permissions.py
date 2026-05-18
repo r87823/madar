@@ -24,7 +24,7 @@ class PermissionRegistryTest(unittest.TestCase):
 
     def test_duplicate_permissions_are_removed(self):
         self.assertEqual(
-            checks.get_permissions_for_roles(["Driver", "Cashier"]),
+            checks.get_permissions_for_roles(["Madar Driver", "Madar Cashier"]),
             [
                 "delivery.view_assigned_batches",
                 "delivery.update_batch",
