@@ -21,6 +21,41 @@ Helpers should:
 - Raise or map denials to stable mobile error codes at the API boundary.
 - Be covered by tests when behavior is added.
 
+## Permission Registry
+
+Madar exposes app-level permission keys from `madar.permissions.registry`. These keys are the contract future protected workflows should use instead of checking roles directly in endpoint code.
+
+Initial permission keys include:
+
+- `system.full_access`.
+- `attendance.check_in`.
+- `attendance.check_out`.
+- `employee_services.view_self`.
+- `employee_services.request_leave`.
+- `orders.create`.
+- `orders.submit_for_approval`.
+- `orders.approve`.
+- `production.view_work_orders`.
+- `production.update_work_order`.
+- `delivery.view_assigned_batches`.
+- `delivery.update_batch`.
+- `payments.collect`.
+- `cashbox.view_own`.
+- `cashbox.submit`.
+- `accounting.view_sync_logs`.
+
+The current registry maps these keys to Frappe roles as a foundation step. `system.full_access` grants every Madar permission key. Future tasks may replace or extend this mapping with DocType-backed rules, but endpoint code should continue to ask permission-key questions.
+
+## Current User Context
+
+The authenticated mobile context endpoint is:
+
+```text
+/api/method/madar.api.me.get_context
+```
+
+It returns the current Frappe user, display name, roles, Madar permission keys, and placeholder `employee` and `branch` values. It must not expose passwords, API keys, API secrets, or sensitive session internals. Employee and branch linking is intentionally deferred to a later task.
+
 ## Sensitive Mutations
 
 Any future sensitive mutation must create an audit log. Examples include payment changes, cashbox actions, delivery status changes, production status changes, approval decisions, and employee self-service mutations.
@@ -37,4 +72,3 @@ The audit record should capture:
 ## Status Transitions
 
 Any future status transition must go through a state machine service. Endpoints and DocType hooks should not independently set workflow status fields for protected operational workflows.
-

@@ -9,6 +9,9 @@ Flutter communicates with Madar through whitelisted Frappe methods. Madar is res
 - Flutter must not store ERPNext credentials.
 - Mobile endpoints must validate permission server-side.
 - Protected endpoint code must use permission helper functions, not direct role checks.
+- Authenticated mobile context is available at `/api/method/madar.api.me.get_context`.
+- The context endpoint must not use `allow_guest=True`.
+- Future protected actions should evaluate Madar permission keys, not raw role names.
 
 ## Readiness Endpoint
 
