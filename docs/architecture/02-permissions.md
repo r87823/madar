@@ -74,6 +74,10 @@ The permission registry maps Madar roles to permission keys:
 
 Frappe built-in `Administrator`, `System Manager`, and `Employee` mappings remain supported for compatibility and system administration. Future protected actions should use permission keys and scope helpers, not raw role checks.
 
+## Development Test Role Assignments
+
+Development/staging bootstrap may create explicitly marked test users and assign Madar roles for endpoint verification. This bootstrap must be opt-in, idempotent, and limited to safe User and Employee context records. It must not create production business documents, assign roles to real users, or store passwords in project files.
+
 ## Current User Context
 
 The authenticated mobile context endpoint is:

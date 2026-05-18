@@ -75,6 +75,14 @@ The context also includes read-only scope helpers:
 
 These scopes are only a foundation for future filtering. They do not implement attendance, leave, payroll, order, delivery, payment, cashbox, production, approval, or notification behavior.
 
+## Development Test Users
+
+Madar may bootstrap development/staging-only users for mobile and API testing. This bootstrap is disabled unless explicitly enabled by deployment configuration or environment.
+
+The development bootstrap may create minimal Frappe User records, assign Madar roles, and create linked Employee records with safe branch and department context. It must remain idempotent and must not delete users, modify `Administrator`, create payroll records, create salary or bank data, or add workflow/business records.
+
+Development user passwords must come from protected deployment configuration or environment and must not be committed, documented, printed, or stored in project files.
+
 ## Rules
 
 - Do not expose HRMS sensitive resources directly to Flutter.
