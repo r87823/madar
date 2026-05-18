@@ -1,0 +1,76 @@
+import 'package:flutter/material.dart';
+
+import '../core/api/frappe_api_client.dart';
+import '../core/auth/auth_controller.dart';
+import '../features/auth/login_screen.dart';
+import '../features/dashboard/dashboard_screen.dart';
+
+class MadarApp extends StatefulWidget {
+  const MadarApp({super.key});
+
+  @override
+  State<MadarApp> createState() => _MadarAppState();
+}
+
+class _MadarAppState extends State<MadarApp> {
+  late final AuthController _authController;
+
+  @override
+  void initState() {
+    super.initState();
+    _authController = AuthController(
+      apiClient: FrappeApiClient(baseUri: FrappeApiClient.staging),
+    );
+  }
+
+  @override
+  void dispose() {
+    _authController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Madar',
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('ar'),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E6F68)),
+        scaffoldBackgroundColor: const Color(0xFFF6F8F7),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        cardTheme: const CardThemeData(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+        ),
+      ),
+      builder: (context, child) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+      home: AnimatedBuilder(
+        animation: _authController,
+        builder: (context, _) {
+          final currentContext = _authController.context;
+          if (currentContext == null) {
+            return LoginScreen(controller: _authController);
+          }
+          return DashboardScreen(
+            context: currentContext,
+            onLogout: _authController.logout,
+          );
+        },
+      ),
+    );
+  }
+}
