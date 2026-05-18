@@ -17,7 +17,15 @@ def has_permission(roles, permission_key):
     return permission_key in get_permissions_for_roles(roles)
 
 
-def build_user_context(user, full_name, roles, employee=None, **_ignored_sensitive_values):
+def build_user_context(
+    user,
+    full_name,
+    roles,
+    employee=None,
+    branch=None,
+    scopes=None,
+    **_ignored_sensitive_values,
+):
     role_list = list(roles or [])
     return {
         "user": user,
@@ -25,5 +33,10 @@ def build_user_context(user, full_name, roles, employee=None, **_ignored_sensiti
         "roles": role_list,
         "permissions": get_permissions_for_roles(role_list),
         "employee": employee,
-        "branch": None,
+        "branch": branch,
+        "scopes": scopes
+        or {
+            "branch_names": [],
+            "department_names": [],
+        },
     }

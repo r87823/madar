@@ -63,6 +63,10 @@ class PermissionRegistryTest(unittest.TestCase):
                 ],
                 "employee": None,
                 "branch": None,
+                "scopes": {
+                    "branch_names": [],
+                    "department_names": [],
+                },
             },
         )
         self.assertNotIn("api_key", context)

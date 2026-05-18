@@ -57,27 +57,20 @@ class CurrentUserContextApiTest(unittest.TestCase):
                 ],
                 "employee": None,
                 "branch": None,
+                "scopes": {
+                    "branch_names": [],
+                    "department_names": [],
+                },
             },
         )
 
-    def test_get_context_includes_safe_employee_context_when_linked(self):
+    def test_get_context_includes_safe_employee_branch_and_scope_context_when_linked(self):
         fake_frappe = types.SimpleNamespace(
             whitelist=lambda *args, **kwargs: lambda fn: fn,
             session=types.SimpleNamespace(user="mobile@example.com"),
             get_roles=lambda user: ["Employee"],
-            get_meta=lambda doctype: _FakeMeta(
-                ["user_id", "employee_name", "company", "department", "designation", "branch"]
-            ),
-            get_all=lambda doctype, filters=None, fields=None, limit=20: [
-                {
-                    "name": "EMP-0001",
-                    "employee_name": "Mobile Worker",
-                    "company": "Madar",
-                    "department": "Operations",
-                    "designation": "Driver",
-                    "branch": "Riyadh",
-                }
-            ],
+            get_meta=_get_meta_for_context_test,
+            get_all=_get_all_for_context_test,
         )
         sys.modules["frappe"] = fake_frappe
         sys.modules["frappe.utils"] = types.SimpleNamespace(get_fullname=lambda user: "Mobile User")
@@ -97,7 +90,21 @@ class CurrentUserContextApiTest(unittest.TestCase):
             },
         )
         self.assertIn("employee_services.view_self", context["permissions"])
-        self.assertIsNone(context["branch"])
+        self.assertEqual(
+            context["branch"],
+            {
+                "name": "Riyadh",
+                "branch": "Riyadh Central",
+                "company": "Madar",
+            },
+        )
+        self.assertEqual(
+            context["scopes"],
+            {
+                "branch_names": ["Riyadh"],
+                "department_names": ["Operations"],
+            },
+        )
 
     def test_get_context_rejects_guest_user(self):
         class AuthenticationError(Exception):
@@ -132,3 +139,35 @@ class _FakeMeta:
 
     def has_field(self, fieldname):
         return fieldname in self._fields
+
+
+def _get_meta_for_context_test(doctype):
+    if doctype == "Employee":
+        return _FakeMeta(["user_id", "employee_name", "company", "department", "designation", "branch"])
+    if doctype == "Branch":
+        return _FakeMeta(["branch", "company"])
+    raise RuntimeError("unexpected doctype")
+
+
+def _get_all_for_context_test(doctype, filters=None, fields=None, limit=20):
+    if doctype == "Employee":
+        return [
+            {
+                "name": "EMP-0001",
+                "employee_name": "Mobile Worker",
+                "company": "Madar",
+                "department": "Operations",
+                "designation": "Driver",
+                "branch": "Riyadh",
+            }
+        ]
+    if doctype == "Branch":
+        return [
+            {
+                "name": "Riyadh",
+                "branch": "Riyadh Central",
+                "company": "Madar",
+                "private_notes": "hidden",
+            }
+        ]
+    return []

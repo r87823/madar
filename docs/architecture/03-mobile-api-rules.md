@@ -14,6 +14,9 @@ Flutter communicates with Madar through whitelisted Frappe methods. Madar is res
 - Future protected actions should evaluate Madar permission keys, not raw role names.
 - Current user context may include a safe read-only Employee summary when a linked Employee exists.
 - Employee lookup failures must not break the current user context endpoint.
+- Current user context includes a `scopes` object with `branch_names` and `department_names`.
+- The top-level `branch` value is read-only and may be `null` or a safe Branch summary.
+- Scope values are a foundation for future filtering only; no domain filtering is implemented in this task.
 
 ## Readiness Endpoint
 

@@ -54,7 +54,27 @@ The authenticated mobile context endpoint is:
 /api/method/madar.api.me.get_context
 ```
 
-It returns the current Frappe user, display name, roles, Madar permission keys, and placeholder `employee` and `branch` values. It must not expose passwords, API keys, API secrets, or sensitive session internals. Employee and branch linking is intentionally deferred to a later task.
+It returns the current Frappe user, display name, roles, Madar permission keys, optional safe Employee context, and optional safe Branch context. It must not expose passwords, API keys, API secrets, sensitive HR fields, or session internals.
+
+The context response also includes a `scopes` object:
+
+```json
+{
+  "branch_names": [],
+  "department_names": []
+}
+```
+
+For regular users, scope values come from safe Employee context fields. For users with `system.full_access`, scope helpers may return wildcard values:
+
+```json
+{
+  "branch_names": ["*"],
+  "department_names": ["*"]
+}
+```
+
+Future order, delivery, payment, cashbox, production, approval, notification, attendance, and leave workflows should consume permission keys and scope helpers instead of checking Frappe roles directly.
 
 ## Sensitive Mutations
 

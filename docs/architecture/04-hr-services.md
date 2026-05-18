@@ -49,6 +49,32 @@ Safe Employee context fields are limited to:
 
 Top-level `branch` remains `null` until branch access rules are defined.
 
+## Branch Context and Scopes
+
+The authenticated current user context may include a safe top-level Branch summary when Employee context includes a branch value.
+
+Branch lookup is read-only:
+
+- Use `employee.branch` when available.
+- If the Branch DocType exists, read only safe display fields.
+- If the Branch DocType is unavailable or lookup fails, return a minimal branch context from `employee.branch`.
+- If there is no employee or no employee branch, return `branch: null`.
+- Do not create or update Branch records.
+
+Safe Branch fields are limited to:
+
+- `name`.
+- `branch`.
+- `company`.
+
+The context also includes read-only scope helpers:
+
+- `branch_names`: employee branch or `[]`.
+- `department_names`: employee department or `[]`.
+- `["*"]` may be returned by the scope helper for `system.full_access` users.
+
+These scopes are only a foundation for future filtering. They do not implement attendance, leave, payroll, order, delivery, payment, cashbox, production, approval, or notification behavior.
+
 ## Rules
 
 - Do not expose HRMS sensitive resources directly to Flutter.
