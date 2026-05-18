@@ -10,6 +10,16 @@ Flutter communicates with Madar through whitelisted Frappe methods. Madar is res
 - Mobile endpoints must validate permission server-side.
 - Protected endpoint code must use permission helper functions, not direct role checks.
 
+## Readiness Endpoint
+
+Madar exposes a basic readiness endpoint for safe service checks:
+
+```text
+/api/method/madar.api.health.ping
+```
+
+The endpoint returns a static service payload and must not call ERPNext, HRMS, or perform database mutations.
+
 ## Response Shape
 
 Every future mobile endpoint should return predictable JSON. Once the shared envelope is defined, endpoints should use it consistently.
@@ -55,4 +65,3 @@ Suggested categories:
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.
-

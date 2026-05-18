@@ -1,0 +1,6 @@
+app_name = "madar"
+app_title = "Madar / مدار"
+app_publisher = "Madar"
+app_description = "Madar Frappe Backend"
+app_email = "admin@example.com"
+app_license = "MIT"

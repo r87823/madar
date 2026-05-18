@@ -1,10 +1,10 @@
 import frappe
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def ping():
     return {
         "ok": True,
         "app": "madar",
-        "site": frappe.local.site,
+        "service": "Madar Frappe Backend",
     }
