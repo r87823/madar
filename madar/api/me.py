@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import get_fullname
 
 from madar.permissions.checks import build_user_context
 
@@ -11,7 +12,6 @@ def get_context():
 
     return build_user_context(
         user=user,
-        full_name=frappe.get_fullname(user),
+        full_name=get_fullname(user),
         roles=frappe.get_roles(user),
     )
-

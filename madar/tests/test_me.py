@@ -7,6 +7,7 @@ import unittest
 class CurrentUserContextApiTest(unittest.TestCase):
     def tearDown(self):
         sys.modules.pop("frappe", None)
+        sys.modules.pop("frappe.utils", None)
         sys.modules.pop("madar.api.me", None)
 
     def test_get_context_is_authenticated_whitelisted_method(self):
@@ -18,6 +19,7 @@ class CurrentUserContextApiTest(unittest.TestCase):
 
         fake_frappe = types.SimpleNamespace(whitelist=whitelist)
         sys.modules["frappe"] = fake_frappe
+        sys.modules["frappe.utils"] = types.SimpleNamespace(get_fullname=lambda user: user)
 
         importlib.import_module("madar.api.me")
 
@@ -27,10 +29,10 @@ class CurrentUserContextApiTest(unittest.TestCase):
         fake_frappe = types.SimpleNamespace(
             whitelist=lambda *args, **kwargs: lambda fn: fn,
             session=types.SimpleNamespace(user="mobile@example.com", sid="hidden"),
-            get_fullname=lambda user: "Mobile User",
             get_roles=lambda user: ["Employee", "Driver"],
         )
         sys.modules["frappe"] = fake_frappe
+        sys.modules["frappe.utils"] = types.SimpleNamespace(get_fullname=lambda user: "Mobile User")
 
         me = importlib.import_module("madar.api.me")
 
@@ -68,10 +70,10 @@ class CurrentUserContextApiTest(unittest.TestCase):
             session=types.SimpleNamespace(user="Guest"),
             AuthenticationError=AuthenticationError,
             throw=throw,
-            get_fullname=lambda user: "Guest",
             get_roles=lambda user: [],
         )
         sys.modules["frappe"] = fake_frappe
+        sys.modules["frappe.utils"] = types.SimpleNamespace(get_fullname=lambda user: "Guest")
 
         me = importlib.import_module("madar.api.me")
 
