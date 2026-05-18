@@ -30,6 +30,8 @@ class CurrentUserContextApiTest(unittest.TestCase):
             whitelist=lambda *args, **kwargs: lambda fn: fn,
             session=types.SimpleNamespace(user="mobile@example.com", sid="hidden"),
             get_roles=lambda user: ["Employee", "Driver"],
+            get_meta=lambda doctype: _FakeMeta(["user_id"]),
+            get_all=lambda doctype, filters=None, fields=None, limit=20: [],
         )
         sys.modules["frappe"] = fake_frappe
         sys.modules["frappe.utils"] = types.SimpleNamespace(get_fullname=lambda user: "Mobile User")
@@ -58,6 +60,45 @@ class CurrentUserContextApiTest(unittest.TestCase):
             },
         )
 
+    def test_get_context_includes_safe_employee_context_when_linked(self):
+        fake_frappe = types.SimpleNamespace(
+            whitelist=lambda *args, **kwargs: lambda fn: fn,
+            session=types.SimpleNamespace(user="mobile@example.com"),
+            get_roles=lambda user: ["Employee"],
+            get_meta=lambda doctype: _FakeMeta(
+                ["user_id", "employee_name", "company", "department", "designation", "branch"]
+            ),
+            get_all=lambda doctype, filters=None, fields=None, limit=20: [
+                {
+                    "name": "EMP-0001",
+                    "employee_name": "Mobile Worker",
+                    "company": "Madar",
+                    "department": "Operations",
+                    "designation": "Driver",
+                    "branch": "Riyadh",
+                }
+            ],
+        )
+        sys.modules["frappe"] = fake_frappe
+        sys.modules["frappe.utils"] = types.SimpleNamespace(get_fullname=lambda user: "Mobile User")
+
+        me = importlib.import_module("madar.api.me")
+        context = me.get_context()
+
+        self.assertEqual(
+            context["employee"],
+            {
+                "name": "EMP-0001",
+                "employee_name": "Mobile Worker",
+                "company": "Madar",
+                "department": "Operations",
+                "designation": "Driver",
+                "branch": "Riyadh",
+            },
+        )
+        self.assertIn("employee_services.view_self", context["permissions"])
+        self.assertIsNone(context["branch"])
+
     def test_get_context_rejects_guest_user(self):
         class AuthenticationError(Exception):
             pass
@@ -83,3 +124,11 @@ class CurrentUserContextApiTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class _FakeMeta:
+    def __init__(self, fields):
+        self._fields = set(fields)
+
+    def has_field(self, fieldname):
+        return fieldname in self._fields

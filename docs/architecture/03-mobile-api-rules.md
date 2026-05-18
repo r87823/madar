@@ -12,6 +12,8 @@ Flutter communicates with Madar through whitelisted Frappe methods. Madar is res
 - Authenticated mobile context is available at `/api/method/madar.api.me.get_context`.
 - The context endpoint must not use `allow_guest=True`.
 - Future protected actions should evaluate Madar permission keys, not raw role names.
+- Current user context may include a safe read-only Employee summary when a linked Employee exists.
+- Employee lookup failures must not break the current user context endpoint.
 
 ## Readiness Endpoint
 
