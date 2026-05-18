@@ -1,0 +1,2 @@
+"""Madar Frappe module package."""
+
