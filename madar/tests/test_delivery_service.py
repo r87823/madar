@@ -265,6 +265,224 @@ class DeliveryServiceTest(unittest.TestCase):
         self.assertEqual(result["ok"], True)
         self.assertEqual([item["name"] for item in result["data"]["items"]], ["MADAR-ORD-3", "MADAR-ORD-1"])
 
+    def test_create_branch_transfer_batch_for_same_destination_branch(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[
+                _order("MADAR-ORD-1", delivery_status="ready_for_dispatch"),
+                _order("MADAR-ORD-2", delivery_status="ready_for_dispatch"),
+            ],
+        )
+
+        result = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-1", "MADAR-ORD-2"],
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["batch_type"], "branch_transfer")
+        self.assertEqual(result["data"]["destination_branch"], "Main Branch")
+        self.assertEqual(len(fake_frappe.delivery_batches), 1)
+        self.assertEqual(len(fake_frappe.delivery_batch_orders), 2)
+
+    def test_batch_creation_rejects_mixed_destinations_methods_and_non_ready_orders(self):
+        mixed_destinations = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[
+                _order("MADAR-ORD-1", destination_branch="Main Branch", delivery_status="ready_for_dispatch"),
+                _order("MADAR-ORD-2", destination_branch="HQ", delivery_status="ready_for_dispatch"),
+            ],
+        )
+        mixed_methods = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[
+                _order("MADAR-ORD-3", delivery_status="ready_for_dispatch"),
+                _order(
+                    "MADAR-ORD-4",
+                    fulfillment_method="customer_delivery",
+                    destination_branch="",
+                    delivery_status="ready_for_dispatch",
+                ),
+            ],
+        )
+        non_ready = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[_order("MADAR-ORD-5", delivery_status="not_ready")],
+        )
+
+        mixed_destination_result = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-1", "MADAR-ORD-2"],
+            frappe_module=mixed_destinations,
+        )
+        mixed_method_result = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-3", "MADAR-ORD-4"],
+            frappe_module=mixed_methods,
+        )
+        non_ready_result = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-5"],
+            frappe_module=non_ready,
+        )
+
+        self.assertEqual(mixed_destination_result["error"]["code"], "MIXED_DESTINATION_BRANCH")
+        self.assertEqual(mixed_method_result["error"]["code"], "MIXED_FULFILLMENT_METHOD")
+        self.assertEqual(non_ready_result["error"]["code"], "ORDER_NOT_READY_FOR_DISPATCH")
+
+    def test_assign_driver_and_driver_sees_only_assigned_batches(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[_order("MADAR-ORD-1", delivery_status="ready_for_dispatch")],
+        )
+        created = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-1"],
+            frappe_module=fake_frappe,
+        )
+        other_batch = _delivery_batch("BATCH-OTHER", driver_user="other.driver@example.com")
+        fake_frappe.delivery_batches.append(other_batch)
+
+        assigned = delivery_service.assign_driver(
+            "driver.test@example.com",
+            created["data"]["name"],
+            "driver.test@example.com",
+            frappe_module=fake_frappe,
+        )
+        listed = delivery_service.list_my_delivery_batches(
+            "driver.test@example.com",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(assigned["data"]["driver_user"], "driver.test@example.com")
+        self.assertEqual(assigned["data"]["status"], "assigned")
+        self.assertEqual([row["name"] for row in listed["data"]["items"]], [created["data"]["name"]])
+
+    def test_driver_cannot_update_unassigned_batch(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Driver"],
+            delivery_batches=[
+                _delivery_batch(
+                    "BATCH-OTHER",
+                    driver_user="other.driver@example.com",
+                )
+            ],
+        )
+
+        result = delivery_service.mark_batch_picked_up(
+            "driver.test@example.com",
+            "BATCH-OTHER",
+            fake_frappe,
+        )
+
+        self.assertEqual(result["error"]["code"], "PERMISSION_DENIED")
+
+    def test_batch_out_for_delivery_and_delivered_cascade_branch_transfer_orders(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[_order("MADAR-ORD-1", delivery_status="ready_for_dispatch")],
+        )
+        created = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-1"],
+            frappe_module=fake_frappe,
+        )
+        batch_name = created["data"]["name"]
+        delivery_service.assign_driver(
+            "driver.test@example.com",
+            batch_name,
+            "driver.test@example.com",
+            frappe_module=fake_frappe,
+        )
+
+        picked = delivery_service.mark_batch_picked_up("driver.test@example.com", batch_name, fake_frappe)
+        out = delivery_service.mark_batch_out_for_delivery("driver.test@example.com", batch_name, fake_frappe)
+        delivered = delivery_service.mark_batch_delivered("driver.test@example.com", batch_name, fake_frappe)
+
+        self.assertEqual(picked["data"]["status"], "picked_up")
+        self.assertEqual(out["data"]["status"], "out_for_delivery")
+        self.assertEqual(fake_frappe.orders[0]["delivery_status"], "received_at_branch")
+        self.assertEqual(delivered["data"]["status"], "completed")
+        self.assertEqual(fake_frappe.orders[0]["delivery_status"], "received_at_branch")
+        self.assertNotEqual(fake_frappe.orders[0]["delivery_status"], "customer_picked_up")
+
+    def test_customer_delivery_batch_cascades_to_delivered_customer(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[
+                _order(
+                    "MADAR-ORD-1",
+                    fulfillment_method="customer_delivery",
+                    destination_branch="",
+                    delivery_status="ready_for_dispatch",
+                )
+            ],
+        )
+        created = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-1"],
+            frappe_module=fake_frappe,
+        )
+        batch_name = created["data"]["name"]
+        delivery_service.assign_driver("driver.test@example.com", batch_name, "driver.test@example.com", fake_frappe)
+        delivery_service.mark_batch_picked_up("driver.test@example.com", batch_name, fake_frappe)
+        delivery_service.mark_batch_out_for_delivery("driver.test@example.com", batch_name, fake_frappe)
+        delivered = delivery_service.mark_batch_delivered("driver.test@example.com", batch_name, fake_frappe)
+
+        self.assertEqual(created["data"]["batch_type"], "customer_delivery")
+        self.assertEqual(delivered["data"]["status"], "completed")
+        self.assertEqual(fake_frappe.orders[0]["delivery_status"], "delivered_to_customer")
+        self.assertEqual(fake_frappe.created_erp_delivery_notes, [])
+
+    def test_returned_batch_requires_reason_and_marks_customer_delivery_failed(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Driver"],
+            orders=[
+                _order(
+                    "MADAR-ORD-1",
+                    fulfillment_method="customer_delivery",
+                    destination_branch="",
+                    delivery_status="ready_for_dispatch",
+                )
+            ],
+        )
+        created = delivery_service.create_delivery_batch(
+            "driver.test@example.com",
+            ["MADAR-ORD-1"],
+            frappe_module=fake_frappe,
+        )
+        batch_name = created["data"]["name"]
+        delivery_service.assign_driver("driver.test@example.com", batch_name, "driver.test@example.com", fake_frappe)
+        delivery_service.mark_batch_picked_up("driver.test@example.com", batch_name, fake_frappe)
+        delivery_service.mark_batch_out_for_delivery("driver.test@example.com", batch_name, fake_frappe)
+
+        missing_reason = delivery_service.mark_batch_returned("driver.test@example.com", batch_name, "", fake_frappe)
+        returned = delivery_service.mark_batch_returned(
+            "driver.test@example.com",
+            batch_name,
+            "Customer unavailable",
+            fake_frappe,
+        )
+
+        self.assertEqual(missing_reason["error"]["code"], "REASON_REQUIRED")
+        self.assertEqual(returned["data"]["status"], "returned")
+        self.assertEqual(fake_frappe.orders[0]["delivery_status"], "failed_delivery")
+
+    def test_branch_user_cannot_create_delivery_batch(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Branch User"],
+            orders=[_order("MADAR-ORD-1", delivery_status="ready_for_dispatch")],
+        )
+
+        result = delivery_service.create_delivery_batch(
+            "branch.user@example.com",
+            ["MADAR-ORD-1"],
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["error"]["code"], "PERMISSION_DENIED")
+
 
 def _order(
     name,
@@ -301,6 +519,25 @@ def _order(
     }
 
 
+def _delivery_batch(name, batch_type="branch_transfer", driver_user="", status="assigned"):
+    return {
+        "doctype": "Madar Delivery Batch",
+        "name": name,
+        "batch_number": name,
+        "batch_type": batch_type,
+        "destination_branch": "Main Branch",
+        "driver_user": driver_user,
+        "status": status,
+        "created_by_user": "driver.test@example.com",
+        "picked_up_at": None,
+        "out_for_delivery_at": None,
+        "delivered_at": None,
+        "returned_at": None,
+        "return_reason": None,
+        "modified": name,
+    }
+
+
 class FakeDoc:
     def __init__(self, fake_frappe, values):
         self._fake_frappe = fake_frappe
@@ -314,6 +551,10 @@ class FakeDoc:
                 self._values[key] = value
         return self
 
+    def insert(self, ignore_permissions=False):
+        self._fake_frappe.insert_doc(self._values)
+        return self
+
     def add_comment(self, comment_type, text):
         self._fake_frappe.audit_events.append({"comment_type": comment_type, "text": text})
 
@@ -324,7 +565,7 @@ class FakeMeta:
 
 
 class FakeFrappe:
-    def __init__(self, *, roles=None, employee=None, orders=None):
+    def __init__(self, *, roles=None, employee=None, orders=None, delivery_batches=None, delivery_batch_orders=None):
         self.roles = roles or ["Madar Admin"]
         self.employee = employee or {
             "name": "EMP-BRANCH",
@@ -333,6 +574,8 @@ class FakeFrappe:
             "department": "Branch Operations",
         }
         self.orders = list(orders or [])
+        self.delivery_batches = list(delivery_batches or [])
+        self.delivery_batch_orders = list(delivery_batch_orders or [])
         self.now = datetime(2026, 5, 19, 12, 0, 0)
         self.audit_events = []
         self.created_erp_delivery_notes = []
@@ -347,11 +590,25 @@ class FakeFrappe:
             return FakeMeta()
         raise KeyError(doctype)
 
-    def get_doc(self, doctype, name):
+    def get_doc(self, doctype_or_values, name=None):
+        if isinstance(doctype_or_values, dict):
+            values = dict(doctype_or_values)
+            if values["doctype"] == "Madar Delivery Batch":
+                values["name"] = f"BATCH-{len(self.delivery_batches) + 1}"
+                values.setdefault("batch_number", values["name"])
+            elif values["doctype"] == "Madar Delivery Batch Order":
+                values["name"] = f"BATCH-ORDER-{len(self.delivery_batch_orders) + 1}"
+            return FakeDoc(self, values)
+        doctype = doctype_or_values
         if doctype == "Delivery Note":
             self.created_erp_delivery_notes.append(name)
             raise AssertionError("Madar delivery must not create ERPNext Delivery Note")
-        for row in self.orders:
+        rows = {
+            "Madar Order": self.orders,
+            "Madar Delivery Batch": self.delivery_batches,
+            "Madar Delivery Batch Order": self.delivery_batch_orders,
+        }.get(doctype, [])
+        for row in rows:
             if row.get("doctype") == doctype and row.get("name") == name:
                 return FakeDoc(self, row)
         raise KeyError(name)
@@ -361,12 +618,24 @@ class FakeFrappe:
             rows = [self.employee] if self.employee else []
         elif doctype == "Madar Order":
             rows = list(self.orders)
+        elif doctype == "Madar Delivery Batch":
+            rows = list(self.delivery_batches)
+        elif doctype == "Madar Delivery Batch Order":
+            rows = list(self.delivery_batch_orders)
         else:
             rows = []
         rows = self._filter_rows(rows, filters)
         if order_by:
             rows.sort(key=lambda row: row.get("modified") or row.get("name"), reverse="desc" in order_by)
         return [types.SimpleNamespace(**{field: row.get(field) for field in fields}) for row in rows[:limit]]
+
+    def insert_doc(self, values):
+        if values["doctype"] == "Madar Delivery Batch":
+            self.delivery_batches.append(values)
+        elif values["doctype"] == "Madar Delivery Batch Order":
+            self.delivery_batch_orders.append(values)
+        else:
+            raise AssertionError(values["doctype"])
 
     def _filter_rows(self, rows, filters):
         filtered = list(rows)

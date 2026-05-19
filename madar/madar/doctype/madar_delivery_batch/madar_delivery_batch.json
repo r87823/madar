@@ -1,0 +1,131 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "naming_series:",
+  "creation": "2026-05-19 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "batch_number",
+    "batch_type",
+    "destination_branch",
+    "driver_user",
+    "status",
+    "created_by_user",
+    "picked_up_at",
+    "out_for_delivery_at",
+    "delivered_at",
+    "returned_at",
+    "return_reason"
+  ],
+  "fields": [
+    {
+      "default": "MADAR-DBATCH-.YYYY.-",
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "MADAR-DBATCH-.YYYY.-",
+      "reqd": 1
+    },
+    {
+      "fieldname": "batch_number",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Batch Number",
+      "read_only": 1
+    },
+    {
+      "fieldname": "batch_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Batch Type",
+      "options": "branch_transfer\ncustomer_delivery",
+      "reqd": 1
+    },
+    {
+      "fieldname": "destination_branch",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Destination Branch"
+    },
+    {
+      "fieldname": "driver_user",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Driver User",
+      "options": "User"
+    },
+    {
+      "default": "draft",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "draft\nassigned\npicked_up\nout_for_delivery\ncompleted\npartially_completed\nreturned\ncancelled",
+      "reqd": 1
+    },
+    {
+      "fieldname": "created_by_user",
+      "fieldtype": "Data",
+      "label": "Created By User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "picked_up_at",
+      "fieldtype": "Datetime",
+      "label": "Picked Up At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "out_for_delivery_at",
+      "fieldtype": "Datetime",
+      "label": "Out For Delivery At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "delivered_at",
+      "fieldtype": "Datetime",
+      "label": "Delivered At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "returned_at",
+      "fieldtype": "Datetime",
+      "label": "Returned At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "return_reason",
+      "fieldtype": "Small Text",
+      "label": "Return Reason",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 0,
+  "links": [],
+  "modified": "2026-05-19 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Madar",
+  "name": "Madar Delivery Batch",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}

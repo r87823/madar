@@ -6,6 +6,7 @@ import '../auth/session_store.dart';
 import '../auth/user_context.dart';
 import '../../features/accounting/erp_sync_models.dart';
 import '../../features/attendance/attendance_status.dart';
+import '../../features/delivery/delivery_batch_models.dart';
 import '../../features/orders/items/order_item_models.dart';
 import '../../features/orders/items/product_models.dart';
 import '../../features/orders/order_models.dart';
@@ -224,6 +225,108 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر تسجيل تعذر التسليم');
     return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatch> createDeliveryBatch(List<String> orderNames) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.delivery.create_delivery_batch'),
+      headers: _headers(),
+      body: {'order_names': orderNames.join(',')},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إنشاء دفعة التوصيل');
+    return DeliveryBatch.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatch> assignDeliveryBatchDriver({
+    required String batchName,
+    required String driverUser,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.delivery.assign_driver'),
+      headers: _headers(),
+      body: {'batch_name': batchName, 'driver_user': driverUser},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تعيين السائق');
+    return DeliveryBatch.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatchList> listDeliveryBatches() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.delivery.list_delivery_batches'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل دفعات التوصيل');
+    return DeliveryBatchList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatchList> listMyDeliveryBatches() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.delivery.list_my_delivery_batches'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل دفعاتك');
+    return DeliveryBatchList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatch> getDeliveryBatch(String batchName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.delivery.get_delivery_batch'),
+      headers: _headers(),
+      body: {'batch_name': batchName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل دفعة التوصيل');
+    return DeliveryBatch.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatch> markBatchPickedUp(String batchName) {
+    return _batchTransition(
+      'madar.api.delivery.mark_batch_picked_up',
+      batchName,
+      fallback: 'تعذر تسجيل استلام الدفعة',
+    );
+  }
+
+  Future<DeliveryBatch> markBatchOutForDelivery(String batchName) {
+    return _batchTransition(
+      'madar.api.delivery.mark_batch_out_for_delivery',
+      batchName,
+      fallback: 'تعذر تسجيل خروج الدفعة',
+    );
+  }
+
+  Future<DeliveryBatch> markBatchDelivered(String batchName) {
+    return _batchTransition(
+      'madar.api.delivery.mark_batch_delivered',
+      batchName,
+      fallback: 'تعذر إكمال الدفعة',
+    );
+  }
+
+  Future<DeliveryBatch> markBatchReturned(
+    String batchName, {
+    required String reason,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.delivery.mark_batch_returned'),
+      headers: _headers(),
+      body: {'batch_name': batchName, 'reason': reason},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إرجاع الدفعة');
+    return DeliveryBatch.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<DeliveryBatch> _batchTransition(
+    String method,
+    String batchName, {
+    required String fallback,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(method),
+      headers: _headers(),
+      body: {'batch_name': batchName},
+    );
+    _throwIfFailed(response, fallback: fallback);
+    return DeliveryBatch.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<MadarOrder> _deliveryTransition(

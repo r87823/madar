@@ -51,6 +51,11 @@ class DashboardCards {
     DashboardCardDefinition(
       title: 'مهام التوصيل',
       icon: Icons.local_shipping_outlined,
+      requiredAny: {'delivery.view_assigned_batches', 'delivery.update_batch'},
+    ),
+    DashboardCardDefinition(
+      title: 'دفعاتي',
+      icon: Icons.inventory_2_outlined,
       requiredAny: {'delivery.view_assigned_batches'},
     ),
     DashboardCardDefinition(

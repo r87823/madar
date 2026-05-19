@@ -228,6 +228,24 @@ Delivery readiness is derived from production readiness. When `production_status
 
 These endpoints must not create ERPNext Delivery Notes, stock entries, invoices, payment entries, cashbox records, driver assignments, route plans, or GPS tracking records.
 
+R5-T02 adds Madar-only delivery batch and driver assignment endpoints:
+
+```text
+/api/method/madar.api.delivery.create_delivery_batch
+/api/method/madar.api.delivery.assign_driver
+/api/method/madar.api.delivery.list_delivery_batches
+/api/method/madar.api.delivery.get_delivery_batch
+/api/method/madar.api.delivery.list_my_delivery_batches
+/api/method/madar.api.delivery.mark_batch_picked_up
+/api/method/madar.api.delivery.mark_batch_out_for_delivery
+/api/method/madar.api.delivery.mark_batch_delivered
+/api/method/madar.api.delivery.mark_batch_returned
+```
+
+Drivers are assigned to `Madar Delivery Batch`, not directly to individual orders. Batch APIs group ready orders and cascade allowed delivery status changes back to linked Madar orders server-side. Branch transfer batches and customer delivery batches must remain separate, and branch transfer batches cannot mix destination branches.
+
+Flutter may select ready orders, request a batch, assign a driver by user id/email, and let the assigned driver update batch status. Flutter must not send order delivery statuses, create ERPNext delivery documents, move stock, collect payment, create cashbox entries, or call ERPNext Delivery Note APIs.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

@@ -45,6 +45,10 @@ R5-T01 adds Madar-owned delivery readiness and dispatch state on `Madar Order`. 
 
 Customer delivery is supported as a secondary fulfillment method through a direct dispatch-to-customer flow. This phase does not assign drivers, optimize routes, track GPS, create ERPNext Delivery Notes, move stock, create invoices, create payments, or touch cashbox records.
 
+R5-T02 adds `Madar Delivery Batch` as the operational assignment unit for drivers. Orders are linked to a batch through `Madar Delivery Batch Order`; drivers are assigned to the batch rather than to individual orders.
+
+Branch pickup orders form `branch_transfer` batches and must share the same destination branch. Customer delivery orders form `customer_delivery` batches. Batch pickup, out-for-delivery, delivered, and returned transitions remain inside Madar and cascade safe delivery status updates to linked Madar orders. This still does not create ERPNext Delivery Notes, stock movements, invoices, payments, cashbox records, GPS records, or route optimization artifacts.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

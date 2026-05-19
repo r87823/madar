@@ -14,9 +14,18 @@ class DispatchQueueScreen extends StatefulWidget {
 
 class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
   OrderList _orders = const OrderList(items: []);
+  final Set<String> _selectedOrders = {};
+  final TextEditingController _driverController = TextEditingController();
   bool _isLoading = true;
+  bool _isCreatingBatch = false;
   String? _message;
   bool _isError = false;
+
+  @override
+  void dispose() {
+    _driverController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -50,13 +59,68 @@ class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
               const Center(child: CircularProgressIndicator())
             else if (_orders.items.isEmpty)
               const _EmptyQueue()
-            else
+            else ...[
               ..._orders.items.map(
                 (order) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _DispatchCard(order: order, onAction: _runAction),
+                  child: _DispatchCard(
+                    order: order,
+                    isSelected: _selectedOrders.contains(order.name),
+                    onSelectedChanged:
+                        order.deliveryStatus ==
+                            OrderDeliveryStatus.readyForDispatch
+                        ? (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedOrders.add(order.name);
+                              } else {
+                                _selectedOrders.remove(order.name);
+                              }
+                            });
+                          }
+                        : null,
+                    onAction: _runAction,
+                  ),
                 ),
               ),
+              const SizedBox(height: 4),
+              Card(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'إنشاء دفعة توصيل',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _driverController,
+                        decoration: const InputDecoration(
+                          labelText: 'بريد السائق',
+                          hintText: 'driver.test@example.com',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: _selectedOrders.isEmpty || _isCreatingBatch
+                            ? null
+                            : _createBatch,
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: Text(
+                          _isCreatingBatch
+                              ? 'جاري إنشاء الدفعة...'
+                              : 'إنشاء دفعة من المحدد',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -74,6 +138,9 @@ class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
       if (!mounted) return;
       setState(() {
         _orders = orders;
+        _selectedOrders.removeWhere(
+          (orderName) => !orders.items.any((order) => order.name == orderName),
+        );
       });
     } catch (error) {
       setState(() {
@@ -131,12 +198,57 @@ class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
       });
     }
   }
+
+  Future<void> _createBatch() async {
+    setState(() {
+      _isCreatingBatch = true;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final batch = await widget.apiClient.createDeliveryBatch(
+        _selectedOrders.toList(growable: false),
+      );
+      final driverUser = _driverController.text.trim();
+      if (driverUser.isNotEmpty) {
+        await widget.apiClient.assignDeliveryBatchDriver(
+          batchName: batch.name,
+          driverUser: driverUser,
+        );
+      }
+      setState(() {
+        _selectedOrders.clear();
+        _message = driverUser.isEmpty
+            ? 'تم إنشاء الدفعة.'
+            : 'تم إنشاء الدفعة وتعيين السائق.';
+      });
+      await _loadQueue();
+    } catch (error) {
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingBatch = false;
+        });
+      }
+    }
+  }
 }
 
 class _DispatchCard extends StatelessWidget {
-  const _DispatchCard({required this.order, required this.onAction});
+  const _DispatchCard({
+    required this.order,
+    required this.isSelected,
+    required this.onSelectedChanged,
+    required this.onAction,
+  });
 
   final MadarOrder order;
+  final bool isSelected;
+  final ValueChanged<bool>? onSelectedChanged;
   final Future<void> Function(MadarOrder order, _DeliveryAction action)
   onAction;
 
@@ -149,11 +261,25 @@ class _DispatchCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              order.customerName.isEmpty ? order.name : order.customerName,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            Row(
+              children: [
+                Checkbox(
+                  value: isSelected,
+                  onChanged: onSelectedChanged == null
+                      ? null
+                      : (value) => onSelectedChanged!(value ?? false),
+                ),
+                Expanded(
+                  child: Text(
+                    order.customerName.isEmpty
+                        ? order.name
+                        : order.customerName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             _Line(label: 'الجوال', value: order.customerPhone),
