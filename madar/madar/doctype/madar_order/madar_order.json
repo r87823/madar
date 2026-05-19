@@ -11,6 +11,8 @@
     "customer_phone",
     "branch",
     "assigned_branch",
+    "fulfillment_method",
+    "destination_branch",
     "order_status",
     "created_by_user",
     "notes",
@@ -25,6 +27,15 @@
     "approval_reason",
     "production_status",
     "production_ready_at",
+    "delivery_status",
+    "ready_for_dispatch_at",
+    "dispatched_at",
+    "received_at_branch_at",
+    "ready_for_customer_pickup_at",
+    "customer_picked_up_at",
+    "delivered_at",
+    "failed_delivery_at",
+    "failed_delivery_reason",
     "erp_sync_status",
     "erp_sync_error",
     "erp_sales_order"
@@ -61,6 +72,19 @@
       "fieldname": "assigned_branch",
       "fieldtype": "Data",
       "label": "Assigned Branch"
+    },
+    {
+      "default": "branch_pickup",
+      "fieldname": "fulfillment_method",
+      "fieldtype": "Select",
+      "label": "Fulfillment Method",
+      "options": "branch_pickup\ncustomer_delivery",
+      "reqd": 1
+    },
+    {
+      "fieldname": "destination_branch",
+      "fieldtype": "Data",
+      "label": "Destination Branch"
     },
     {
       "default": "draft",
@@ -151,6 +175,62 @@
       "fieldname": "production_ready_at",
       "fieldtype": "Datetime",
       "label": "Production Ready At",
+      "read_only": 1
+    },
+    {
+      "default": "not_ready",
+      "fieldname": "delivery_status",
+      "fieldtype": "Select",
+      "label": "Delivery Status",
+      "options": "not_ready\nready_for_dispatch\ndispatched_to_branch\nreceived_at_branch\nready_for_customer_pickup\ncustomer_picked_up\ndispatched_to_customer\ndelivered_to_customer\nfailed_delivery",
+      "read_only": 1
+    },
+    {
+      "fieldname": "ready_for_dispatch_at",
+      "fieldtype": "Datetime",
+      "label": "Ready For Dispatch At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "dispatched_at",
+      "fieldtype": "Datetime",
+      "label": "Dispatched At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "received_at_branch_at",
+      "fieldtype": "Datetime",
+      "label": "Received At Branch At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "ready_for_customer_pickup_at",
+      "fieldtype": "Datetime",
+      "label": "Ready For Customer Pickup At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "customer_picked_up_at",
+      "fieldtype": "Datetime",
+      "label": "Customer Picked Up At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "delivered_at",
+      "fieldtype": "Datetime",
+      "label": "Delivered At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "failed_delivery_at",
+      "fieldtype": "Datetime",
+      "label": "Failed Delivery At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "failed_delivery_reason",
+      "fieldtype": "Small Text",
+      "label": "Failed Delivery Reason",
       "read_only": 1
     },
     {

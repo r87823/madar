@@ -39,6 +39,12 @@ R4-T01 adds Madar-owned production setup records for production centers, product
 
 This foundation does not create production work orders, mutate ERPNext Items, reserve stock, create delivery records, create invoices, create payments, or post accounting entries.
 
+### Delivery Readiness
+
+R5-T01 adds Madar-owned delivery readiness and dispatch state on `Madar Order`. Branch pickup is the default fulfillment method: production prepares the order, the order is dispatched to the destination branch, the branch receives it, marks it ready for customer pickup, and then marks customer pickup complete.
+
+Customer delivery is supported as a secondary fulfillment method through a direct dispatch-to-customer flow. This phase does not assign drivers, optimize routes, track GPS, create ERPNext Delivery Notes, move stock, create invoices, create payments, or touch cashbox records.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

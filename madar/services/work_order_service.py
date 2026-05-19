@@ -2,6 +2,7 @@ from madar.permissions.checks import get_permissions_for_roles, has_permission
 from madar.permissions.scopes import get_context_scopes
 from madar.services.employee_context import get_employee_context
 from madar.services import production_mapping_service
+from madar.services import delivery_service
 
 
 CREATE_PERMISSION = "production.manage_mappings"
@@ -267,6 +268,7 @@ def recalculate_order_production_status(order_name, frappe_module=None):
     if changed:
         _audit(order, "aggregate_production_status", "system", frappe_module, reason=next_status)
     _commit(frappe_module)
+    delivery_service.sync_delivery_readiness(order_name, frappe_module=frappe_module)
     return _ok(_serialize_order_production(order))
 
 

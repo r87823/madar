@@ -13,6 +13,8 @@ ORDER_FIELDS = [
     "customer_phone",
     "branch",
     "assigned_branch",
+    "fulfillment_method",
+    "destination_branch",
     "order_status",
     "created_by_user",
     "notes",
@@ -27,6 +29,15 @@ ORDER_FIELDS = [
     "approval_reason",
     "production_status",
     "production_ready_at",
+    "delivery_status",
+    "ready_for_dispatch_at",
+    "dispatched_at",
+    "received_at_branch_at",
+    "ready_for_customer_pickup_at",
+    "customer_picked_up_at",
+    "delivered_at",
+    "failed_delivery_at",
+    "failed_delivery_reason",
     "erp_sync_status",
     "erp_sync_error",
     "erp_sales_order",
@@ -36,7 +47,15 @@ ORDER_FIELDS = [
 MAX_LIST_LIMIT = 50
 
 
-def create_draft(user, customer_name, customer_phone="", notes="", frappe_module=None):
+def create_draft(
+    user,
+    customer_name,
+    customer_phone="",
+    notes="",
+    fulfillment_method="branch_pickup",
+    destination_branch=None,
+    frappe_module=None,
+):
     if frappe_module is None:
         import frappe as frappe_module
 
@@ -47,6 +66,18 @@ def create_draft(user, customer_name, customer_phone="", notes="", frappe_module
     employee = _employee(user, frappe_module)
     scopes = get_context_scopes(employee, permissions)
     branch = _default_branch(scopes, employee)
+    fulfillment_method = (fulfillment_method or "branch_pickup").strip()
+    if fulfillment_method not in {"branch_pickup", "customer_delivery"}:
+        return _error("FULFILLMENT_METHOD_REQUIRED", "طريقة التسليم مطلوبة.")
+    destination_branch = _resolve_destination_branch(
+        fulfillment_method,
+        destination_branch,
+        branch,
+        scopes,
+        permissions,
+    )
+    if isinstance(destination_branch, dict):
+        return destination_branch
     now = _server_now(frappe_module)
     doc = frappe_module.get_doc(
         {
@@ -56,16 +87,35 @@ def create_draft(user, customer_name, customer_phone="", notes="", frappe_module
             "customer_phone": (customer_phone or "").strip(),
             "notes": (notes or "").strip(),
             "branch": branch,
-            "assigned_branch": branch,
+            "assigned_branch": destination_branch or branch,
+            "fulfillment_method": fulfillment_method,
+            "destination_branch": destination_branch,
             "order_status": "draft",
             "created_by_user": user,
             "subtotal": 0,
             "items_count": 0,
+            "delivery_status": "not_ready",
         }
     ).insert(ignore_permissions=True)
     _audit(doc, "create_draft", user, now)
     frappe_module.db.commit()
     return _ok(_serialize_order(doc))
+
+
+def _resolve_destination_branch(fulfillment_method, requested_branch, default_branch, scopes, permissions):
+    if fulfillment_method == "customer_delivery":
+        return None
+    branch_names = scopes.get("branch_names") or []
+    requested_branch = (requested_branch or "").strip()
+    if not requested_branch and default_branch:
+        requested_branch = default_branch
+    if not requested_branch:
+        return _error("DESTINATION_BRANCH_REQUIRED", "فرع الاستلام مطلوب.")
+    if FULL_ACCESS_PERMISSION in set(permissions or []) or branch_names == ["*"]:
+        return requested_branch
+    if requested_branch not in branch_names:
+        return _error("OUT_OF_SCOPE", "فرع الاستلام خارج نطاقك.")
+    return requested_branch
 
 
 def list_orders(user, frappe_module=None, limit=MAX_LIST_LIMIT):
@@ -294,6 +344,8 @@ def _serialize_order(order):
         "customer_phone": _get_value(order, "customer_phone"),
         "branch": _get_value(order, "branch"),
         "assigned_branch": _get_value(order, "assigned_branch"),
+        "fulfillment_method": _get_value(order, "fulfillment_method") or "branch_pickup",
+        "destination_branch": _get_value(order, "destination_branch"),
         "order_status": _get_value(order, "order_status"),
         "created_by_user": _get_value(order, "created_by_user"),
         "notes": _get_value(order, "notes"),
@@ -308,6 +360,15 @@ def _serialize_order(order):
         "approval_reason": _get_value(order, "approval_reason"),
         "production_status": _get_value(order, "production_status") or "not_started",
         "production_ready_at": _string_or_none(_get_value(order, "production_ready_at")),
+        "delivery_status": _get_value(order, "delivery_status") or "not_ready",
+        "ready_for_dispatch_at": _string_or_none(_get_value(order, "ready_for_dispatch_at")),
+        "dispatched_at": _string_or_none(_get_value(order, "dispatched_at")),
+        "received_at_branch_at": _string_or_none(_get_value(order, "received_at_branch_at")),
+        "ready_for_customer_pickup_at": _string_or_none(_get_value(order, "ready_for_customer_pickup_at")),
+        "customer_picked_up_at": _string_or_none(_get_value(order, "customer_picked_up_at")),
+        "delivered_at": _string_or_none(_get_value(order, "delivered_at")),
+        "failed_delivery_at": _string_or_none(_get_value(order, "failed_delivery_at")),
+        "failed_delivery_reason": _get_value(order, "failed_delivery_reason"),
         "erp_sync_status": _get_value(order, "erp_sync_status"),
         "erp_sync_error": _get_value(order, "erp_sync_error"),
         "erp_sales_order": _get_value(order, "erp_sales_order"),

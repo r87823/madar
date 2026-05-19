@@ -6,6 +6,7 @@ import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/accounting/erp_sync_review_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
+import '../features/delivery/dispatch_queue_screen.dart';
 import '../features/orders/approval_queue_screen.dart';
 import '../features/orders/order_list_screen.dart';
 import '../features/production/production_mapping_screen.dart';
@@ -84,7 +85,10 @@ class _MadarAppState extends State<MadarApp> {
             onOpenOrders: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => OrderListScreen(apiClient: _apiClient),
+                  builder: (_) => OrderListScreen(
+                    apiClient: _apiClient,
+                    userContext: currentContext,
+                  ),
                 ),
               );
             },
@@ -114,6 +118,13 @@ class _MadarAppState extends State<MadarApp> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => WorkOrderListScreen(apiClient: _apiClient),
+                ),
+              );
+            },
+            onOpenDispatchQueue: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DispatchQueueScreen(apiClient: _apiClient),
                 ),
               );
             },

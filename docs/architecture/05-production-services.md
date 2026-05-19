@@ -57,6 +57,8 @@ R4-T03 aggregates Madar work order statuses back onto the parent `Madar Order` t
 
 When all work orders are ready, `production_ready_at` is set using server time. If the order is already marked ready with an existing ready timestamp, the timestamp is preserved. If aggregation later determines the order is not ready, the ready timestamp is cleared so it is only present for ready production state.
 
+Production readiness also feeds Madar delivery readiness. When aggregation sets the parent order to `production_status=ready`, the delivery service may derive `delivery_status=ready_for_dispatch`. Production services must not create delivery documents, ERPNext Delivery Notes, stock movements, invoices, payments, or cashbox records.
+
 ## API Boundary
 
 All production mapping APIs are authenticated Frappe whitelisted methods under `madar.api.production_mapping`. The API layer only authenticates and delegates to `madar.services.production_mapping_service`.

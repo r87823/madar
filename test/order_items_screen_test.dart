@@ -65,6 +65,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(ListView), const Offset(0, -260));
+    await tester.pumpAndSettle();
+
     expect(find.text('الأصناف'), findsOneWidget);
     expect(find.text('Milk'), findsOneWidget);
     expect(find.text('الإجمالي: 25.00'), findsOneWidget);

@@ -104,6 +104,14 @@ Production work order endpoints also use:
 - `ITEM_DEPARTMENT_MAPPING_MISSING`.
 - `INVALID_WORK_ORDER_TRANSITION`.
 
+Delivery endpoints also use:
+
+- `FULFILLMENT_METHOD_REQUIRED`.
+- `DESTINATION_BRANCH_REQUIRED`.
+- `INVALID_DELIVERY_TRANSITION`.
+- `ORDER_NOT_READY_FOR_DISPATCH`.
+- `OUT_OF_SCOPE`.
+
 ## Order Draft Endpoints
 
 R3-T01 exposes Madar operational order draft endpoints only:
@@ -198,6 +206,27 @@ These endpoints create and update Madar operational work orders only. They must 
 Flutter sends only a Madar work order name and, for delay, a reason. Madar derives actor, scope, status transition, timestamps, and audit comments server-side.
 
 Work order mutations also update the parent Madar Order production summary server-side. Order responses may include read-only `production_status` and `production_ready_at` fields for Flutter display. Flutter must treat these fields as derived context and must not send production status values.
+
+## Delivery Dispatch Endpoints
+
+R5-T01 exposes Madar-only delivery readiness and dispatch endpoints:
+
+```text
+/api/method/madar.api.delivery.list_dispatch_queue
+/api/method/madar.api.delivery.mark_dispatched_to_branch
+/api/method/madar.api.delivery.mark_received_at_branch
+/api/method/madar.api.delivery.mark_ready_for_customer_pickup
+/api/method/madar.api.delivery.mark_customer_picked_up
+/api/method/madar.api.delivery.mark_dispatched_to_customer
+/api/method/madar.api.delivery.mark_delivered_to_customer
+/api/method/madar.api.delivery.mark_failed_delivery
+```
+
+Order creation may send `fulfillment_method` and `destination_branch`. `branch_pickup` is the default and primary option. `destination_branch` is required for branch pickup and optional for customer delivery in this phase.
+
+Delivery readiness is derived from production readiness. When `production_status` becomes `ready`, Madar sets `delivery_status=ready_for_dispatch` and `ready_for_dispatch_at` using server time if the field is empty. Flutter displays delivery state and may request valid transitions only through Madar APIs.
+
+These endpoints must not create ERPNext Delivery Notes, stock entries, invoices, payment entries, cashbox records, driver assignments, route plans, or GPS tracking records.
 
 ## Long-Running Work
 

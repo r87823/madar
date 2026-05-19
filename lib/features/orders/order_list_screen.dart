@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/auth/user_context.dart';
 import 'create_order_screen.dart';
 import 'order_detail_screen.dart';
 import 'order_models.dart';
 
 class OrderListScreen extends StatefulWidget {
-  const OrderListScreen({required this.apiClient, super.key});
+  const OrderListScreen({required this.apiClient, this.userContext, super.key});
 
   final FrappeApiClient apiClient;
+  final UserContext? userContext;
 
   @override
   State<OrderListScreen> createState() => _OrderListScreenState();
@@ -99,7 +101,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Future<void> _openCreate() async {
     final created = await Navigator.of(context).push<MadarOrder>(
       MaterialPageRoute(
-        builder: (_) => CreateOrderScreen(apiClient: widget.apiClient),
+        builder: (_) => CreateOrderScreen(
+          apiClient: widget.apiClient,
+          userContext: widget.userContext,
+        ),
       ),
     );
     if (created != null) {

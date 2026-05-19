@@ -162,6 +162,17 @@ R4-T02 introduces Madar-owned department work orders created from approved, full
 
 Work order endpoint code must not check raw Frappe roles directly. Lifecycle transitions are centralized in `madar.services.work_order_service`, and branch users cannot update production work orders unless they also receive explicit production permissions.
 
+## Delivery Permissions
+
+R5-T01 introduces delivery readiness and dispatch queue permissions:
+
+- `delivery.view_assigned_batches` may list ready and active dispatch queue rows.
+- `delivery.update_batch` may mark dispatch/customer-delivery states such as dispatching to branch, dispatching to customer, delivered to customer, or failed delivery.
+- `orders.create` branch users may mark destination-branch handoff states for their own scoped branch: received at branch, ready for customer pickup, and customer picked up.
+- `system.full_access` can view and update all delivery states.
+
+Delivery endpoint code must not check raw Frappe roles directly. It must use permission keys and branch scope helpers, and return `PERMISSION_DENIED` or `OUT_OF_SCOPE` for unauthorized transitions.
+
 ## Sensitive Mutations
 
 Any future sensitive mutation must create an audit log. Examples include payment changes, cashbox actions, delivery status changes, production status changes, approval decisions, and employee self-service mutations.

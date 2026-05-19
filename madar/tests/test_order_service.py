@@ -22,6 +22,9 @@ class OrderServiceTest(unittest.TestCase):
         self.assertEqual(result["data"]["order_status"], "draft")
         self.assertEqual(result["data"]["branch"], "Main Branch")
         self.assertEqual(result["data"]["assigned_branch"], "Main Branch")
+        self.assertEqual(result["data"]["fulfillment_method"], "branch_pickup")
+        self.assertEqual(result["data"]["destination_branch"], "Main Branch")
+        self.assertEqual(result["data"]["delivery_status"], "not_ready")
         self.assertEqual(result["data"]["created_by_user"], "branch.user@example.com")
         self.assertNotIn("password", result["data"])
         self.assertEqual(fake_frappe.orders[0]["doctype"], "Madar Order")
@@ -40,6 +43,59 @@ class OrderServiceTest(unittest.TestCase):
 
         self.assertEqual(result["ok"], False)
         self.assertEqual(result["error"]["code"], "PERMISSION_DENIED")
+        self.assertEqual(fake_frappe.orders, [])
+
+    def test_branch_pickup_requires_destination_branch_for_wildcard_scope(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Admin"],
+            employee={"name": "EMP-ADM", "employee_name": "Admin", "branch": None, "department": None},
+        )
+
+        result = order_service.create_draft(
+            user="admin@example.com",
+            customer_name="Admin Customer",
+            customer_phone="0500000000",
+            notes="",
+            fulfillment_method="branch_pickup",
+            destination_branch="",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "DESTINATION_BRANCH_REQUIRED")
+
+    def test_customer_delivery_does_not_require_destination_branch(self):
+        fake_frappe = FakeFrappe()
+
+        result = order_service.create_draft(
+            user="branch.user@example.com",
+            customer_name="Delivery Customer",
+            customer_phone="0500000000",
+            notes="",
+            fulfillment_method="customer_delivery",
+            destination_branch="",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["fulfillment_method"], "customer_delivery")
+        self.assertEqual(result["data"]["destination_branch"], None)
+
+    def test_branch_user_cannot_create_pickup_for_other_branch(self):
+        fake_frappe = FakeFrappe()
+
+        result = order_service.create_draft(
+            user="branch.user@example.com",
+            customer_name="Other Branch",
+            customer_phone="0500000000",
+            notes="",
+            fulfillment_method="branch_pickup",
+            destination_branch="HQ",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "OUT_OF_SCOPE")
         self.assertEqual(fake_frappe.orders, [])
 
     def test_list_orders_is_limited_to_branch_scope(self):
@@ -165,6 +221,19 @@ def _order(name, branch, created_by_user, status="draft", items_count=0, subtota
         "items_count": items_count,
         "submitted_at": None,
         "cancelled_at": None,
+        "production_status": "not_started",
+        "production_ready_at": None,
+        "fulfillment_method": "branch_pickup",
+        "destination_branch": branch,
+        "delivery_status": "not_ready",
+        "ready_for_dispatch_at": None,
+        "dispatched_at": None,
+        "received_at_branch_at": None,
+        "ready_for_customer_pickup_at": None,
+        "customer_picked_up_at": None,
+        "delivered_at": None,
+        "failed_delivery_at": None,
+        "failed_delivery_reason": None,
         "creation": name,
         "modified": name,
         "password": "hidden",

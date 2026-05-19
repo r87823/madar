@@ -8,6 +8,7 @@ import 'package:madar/core/api/frappe_api_client.dart';
 import 'package:madar/core/auth/session_store.dart';
 import 'package:madar/core/auth/user_context.dart';
 import 'package:madar/features/dashboard/dashboard_screen.dart';
+import 'package:madar/features/orders/create_order_screen.dart';
 import 'package:madar/features/orders/order_detail_screen.dart';
 import 'package:madar/features/orders/order_list_screen.dart';
 import 'package:madar/features/orders/order_models.dart';
@@ -118,6 +119,73 @@ void main() {
     expect(find.text('تمت المزامنة'), findsOneWidget);
     expect(find.text('فشل في المزامنة'), findsOneWidget);
   });
+
+  testWidgets(
+    'create order defaults to branch pickup and sends destination branch',
+    (tester) async {
+      final requests = <http.Request>[];
+      final client = FrappeApiClient(
+        baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+        sessionStore: MemorySessionStore(sid: 'abc123'),
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          return http.Response.bytes(
+            utf8.encode(jsonEncode({'message': _orderEnvelope()})),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: CreateOrderScreen(
+              apiClient: client,
+              userContext: const UserContext(
+                user: 'branch.user@example.com',
+                fullName: 'Branch User',
+                roles: ['Madar Branch User'],
+                permissions: ['orders.create'],
+                scopes: ScopeContext(
+                  branchNames: ['Main Branch'],
+                  departmentNames: [],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('استلام من الفرع'), findsOneWidget);
+      expect(find.text('توصيل للعميل'), findsOneWidget);
+      final segmented = tester.widget<SegmentedButton<OrderFulfillmentMethod>>(
+        find.byType(SegmentedButton<OrderFulfillmentMethod>),
+      );
+      expect(
+        segmented.segments.first.value,
+        OrderFulfillmentMethod.branchPickup,
+      );
+      expect(segmented.selected.single, OrderFulfillmentMethod.branchPickup);
+      expect(
+        find.widgetWithText(TextFormField, 'فرع الاستلام'),
+        findsOneWidget,
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'اسم العميل'),
+        'عميل',
+      );
+      await tester.drag(find.byType(ListView), const Offset(0, -220));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(FilledButton));
+      await tester.pumpAndSettle();
+
+      expect(requests.single.bodyFields['fulfillment_method'], 'branch_pickup');
+      expect(requests.single.bodyFields['destination_branch'], 'Main Branch');
+    },
+  );
 }
 
 FrappeApiClient _ordersClient() {
@@ -193,6 +261,22 @@ FrappeApiClient _syncStatusOrdersClient() {
       );
     }),
   );
+}
+
+Map<String, dynamic> _orderEnvelope() {
+  return {
+    'ok': true,
+    'data': {
+      'name': 'MADAR-ORD-1',
+      'customer_name': 'عميل',
+      'customer_phone': '',
+      'order_status': 'draft',
+      'fulfillment_method': 'branch_pickup',
+      'destination_branch': 'Main Branch',
+      'delivery_status': 'not_ready',
+    },
+    'error': null,
+  };
 }
 
 FrappeApiClient _approvedOrderClient() {

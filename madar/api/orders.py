@@ -4,13 +4,21 @@ from madar.services import order_service
 
 
 @frappe.whitelist()
-def create_draft(customer_name, customer_phone="", notes=""):
+def create_draft(
+    customer_name,
+    customer_phone="",
+    notes="",
+    fulfillment_method="branch_pickup",
+    destination_branch=None,
+):
     user = _authenticated_user()
     return order_service.create_draft(
         user,
         customer_name=customer_name,
         customer_phone=customer_phone,
         notes=notes,
+        fulfillment_method=fulfillment_method,
+        destination_branch=destination_branch,
     )
 
 

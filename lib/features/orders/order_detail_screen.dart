@@ -62,6 +62,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     value: _order.productionStatus.arabicLabel,
                   ),
                   _Row(
+                    label: 'طريقة التسليم',
+                    value: _order.fulfillmentMethod.arabicLabel,
+                  ),
+                  _Row(
+                    label: 'فرع الاستلام',
+                    value: _order.destinationBranch?.isNotEmpty == true
+                        ? _order.destinationBranch!
+                        : 'لا يوجد',
+                  ),
+                  _Row(
+                    label: 'حالة التسليم',
+                    value: _order.deliveryStatus.arabicLabel,
+                  ),
+                  _Row(
                     label: 'الفرع',
                     value: _order.assignedBranch ?? _order.branch ?? 'لا يوجد',
                   ),

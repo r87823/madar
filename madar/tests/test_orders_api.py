@@ -25,7 +25,13 @@ class OrdersApiTest(unittest.TestCase):
         self.assertTrue(all(call == {"args": (), "kwargs": {}} for call in whitelist_calls))
         self.assertEqual(
             set(inspect.signature(orders.create_draft).parameters),
-            {"customer_name", "customer_phone", "notes"},
+            {
+                "customer_name",
+                "customer_phone",
+                "notes",
+                "fulfillment_method",
+                "destination_branch",
+            },
         )
 
     def test_order_methods_reject_guest(self):
@@ -82,7 +88,13 @@ class OrdersApiTest(unittest.TestCase):
                 (
                     "create",
                     "branch.user@example.com",
-                    {"customer_name": "Customer", "customer_phone": "05", "notes": "note"},
+                    {
+                        "customer_name": "Customer",
+                        "customer_phone": "05",
+                        "notes": "note",
+                        "fulfillment_method": "branch_pickup",
+                        "destination_branch": None,
+                    },
                 ),
                 ("list", "branch.user@example.com"),
                 ("get", "branch.user@example.com", "MADAR-ORD-1"),

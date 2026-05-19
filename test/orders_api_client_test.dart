@@ -31,32 +31,96 @@ void main() {
     expect(list.items.single.name, 'MADAR-ORD-1');
     expect(list.items.single.status, OrderStatus.draft);
     expect(list.items.single.status.arabicLabel, 'مسودة');
+    expect(
+      list.items.single.fulfillmentMethod,
+      OrderFulfillmentMethod.branchPickup,
+    );
+    expect(list.items.single.deliveryStatus, OrderDeliveryStatus.notReady);
   });
 
-  test('createOrderDraft calls only Madar order endpoint', () async {
+  test(
+    'createOrderDraft sends fulfillment details to Madar endpoint',
+    () async {
+      final requests = <http.Request>[];
+      final client = FrappeApiClient(
+        baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+        sessionStore: MemorySessionStore(sid: 'abc123'),
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          return _jsonResponse({'message': _orderEnvelope()});
+        }),
+      );
+
+      await client.createOrderDraft(
+        customerName: 'عميل',
+        customerPhone: '0500000000',
+        notes: 'ملاحظة',
+        fulfillmentMethod: OrderFulfillmentMethod.branchPickup,
+        destinationBranch: 'Main Branch',
+      );
+
+      expect(
+        requests.single.url.path,
+        '/api/method/madar.api.orders.create_draft',
+      );
+      expect(requests.single.headers['cookie'], 'sid=abc123');
+      expect(requests.single.bodyFields['customer_name'], 'عميل');
+      expect(requests.single.bodyFields['fulfillment_method'], 'branch_pickup');
+      expect(requests.single.bodyFields['destination_branch'], 'Main Branch');
+      expect(requests.single.bodyFields.containsKey('doctype'), isFalse);
+    },
+  );
+
+  test('delivery methods call only Madar delivery endpoints', () async {
     final requests = <http.Request>[];
     final client = FrappeApiClient(
       baseUri: Uri.parse('https://madar-test.r8787m.cc'),
       sessionStore: MemorySessionStore(sid: 'abc123'),
       httpClient: MockClient((request) async {
         requests.add(request);
-        return _jsonResponse({'message': _orderEnvelope()});
+        if (request.url.path.endsWith('list_dispatch_queue')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {
+                'items': [_orderMap(deliveryStatus: 'ready_for_dispatch')],
+              },
+              'error': null,
+            },
+          });
+        }
+        return _jsonResponse({
+          'message': _orderEnvelope(deliveryStatus: 'dispatched_to_branch'),
+        });
       }),
     );
 
-    await client.createOrderDraft(
-      customerName: 'عميل',
-      customerPhone: '0500000000',
-      notes: 'ملاحظة',
-    );
+    final queue = await client.listDispatchQueue();
+    await client.markDispatchedToBranch('MADAR-ORD-1');
+    await client.markReceivedAtBranch('MADAR-ORD-1');
+    await client.markReadyForCustomerPickup('MADAR-ORD-1');
+    await client.markCustomerPickedUp('MADAR-ORD-1');
+    await client.markDispatchedToCustomer('MADAR-ORD-1');
+    await client.markDeliveredToCustomer('MADAR-ORD-1');
+    await client.markFailedDelivery('MADAR-ORD-1', reason: 'تعذر التواصل');
 
     expect(
-      requests.single.url.path,
-      '/api/method/madar.api.orders.create_draft',
+      queue.items.single.deliveryStatus,
+      OrderDeliveryStatus.readyForDispatch,
     );
-    expect(requests.single.headers['cookie'], 'sid=abc123');
-    expect(requests.single.bodyFields['customer_name'], 'عميل');
-    expect(requests.single.bodyFields.containsKey('doctype'), isFalse);
+    expect(
+      requests.map((request) => request.url.path).toList(),
+      containsAll([
+        '/api/method/madar.api.delivery.list_dispatch_queue',
+        '/api/method/madar.api.delivery.mark_dispatched_to_branch',
+        '/api/method/madar.api.delivery.mark_received_at_branch',
+        '/api/method/madar.api.delivery.mark_ready_for_customer_pickup',
+        '/api/method/madar.api.delivery.mark_customer_picked_up',
+        '/api/method/madar.api.delivery.mark_dispatched_to_customer',
+        '/api/method/madar.api.delivery.mark_delivered_to_customer',
+        '/api/method/madar.api.delivery.mark_failed_delivery',
+      ]),
+    );
   });
 
   test('listOrders and submitOrder use Madar endpoints', () async {
@@ -92,11 +156,21 @@ void main() {
   });
 }
 
-Map<String, dynamic> _orderEnvelope({String status = 'draft'}) {
-  return {'ok': true, 'data': _orderMap(status: status), 'error': null};
+Map<String, dynamic> _orderEnvelope({
+  String status = 'draft',
+  String deliveryStatus = 'not_ready',
+}) {
+  return {
+    'ok': true,
+    'data': _orderMap(status: status, deliveryStatus: deliveryStatus),
+    'error': null,
+  };
 }
 
-Map<String, dynamic> _orderMap({String status = 'draft'}) {
+Map<String, dynamic> _orderMap({
+  String status = 'draft',
+  String deliveryStatus = 'not_ready',
+}) {
   return {
     'name': 'MADAR-ORD-1',
     'customer_name': 'عميل',
@@ -104,6 +178,10 @@ Map<String, dynamic> _orderMap({String status = 'draft'}) {
     'order_status': status,
     'branch': 'Main Branch',
     'assigned_branch': 'Main Branch',
+    'fulfillment_method': 'branch_pickup',
+    'destination_branch': 'Main Branch',
+    'production_status': 'ready',
+    'delivery_status': deliveryStatus,
     'created_by_user': 'branch.user@example.com',
     'notes': 'ملاحظة',
     'submitted_at': status == 'submitted' ? '2026-05-19 12:00:00' : null,

@@ -116,6 +116,9 @@ class FrappeApiClient {
     required String customerName,
     required String customerPhone,
     required String notes,
+    OrderFulfillmentMethod fulfillmentMethod =
+        OrderFulfillmentMethod.branchPickup,
+    String destinationBranch = '',
   }) async {
     final response = await _httpClient.post(
       _methodUri('madar.api.orders.create_draft'),
@@ -124,6 +127,9 @@ class FrappeApiClient {
         'customer_name': customerName,
         'customer_phone': customerPhone,
         'notes': notes,
+        'fulfillment_method': fulfillmentMethod.apiValue,
+        if (destinationBranch.isNotEmpty)
+          'destination_branch': destinationBranch,
       },
     );
     _throwIfFailed(response, fallback: 'تعذر إنشاء الطلب');
@@ -147,6 +153,90 @@ class FrappeApiClient {
       body: {'order_name': orderName},
     );
     _throwIfFailed(response, fallback: 'تعذر إلغاء الطلب');
+    return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<OrderList> listDispatchQueue() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.delivery.list_dispatch_queue'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل مهام التوصيل');
+    return OrderList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarOrder> markDispatchedToBranch(String orderName) {
+    return _deliveryTransition(
+      'madar.api.delivery.mark_dispatched_to_branch',
+      orderName,
+      fallback: 'تعذر تسجيل الخروج إلى الفرع',
+    );
+  }
+
+  Future<MadarOrder> markReceivedAtBranch(String orderName) {
+    return _deliveryTransition(
+      'madar.api.delivery.mark_received_at_branch',
+      orderName,
+      fallback: 'تعذر تسجيل الاستلام في الفرع',
+    );
+  }
+
+  Future<MadarOrder> markReadyForCustomerPickup(String orderName) {
+    return _deliveryTransition(
+      'madar.api.delivery.mark_ready_for_customer_pickup',
+      orderName,
+      fallback: 'تعذر تحديث جاهزية استلام العميل',
+    );
+  }
+
+  Future<MadarOrder> markCustomerPickedUp(String orderName) {
+    return _deliveryTransition(
+      'madar.api.delivery.mark_customer_picked_up',
+      orderName,
+      fallback: 'تعذر تسجيل تسليم العميل',
+    );
+  }
+
+  Future<MadarOrder> markDispatchedToCustomer(String orderName) {
+    return _deliveryTransition(
+      'madar.api.delivery.mark_dispatched_to_customer',
+      orderName,
+      fallback: 'تعذر تسجيل الخروج للتوصيل',
+    );
+  }
+
+  Future<MadarOrder> markDeliveredToCustomer(String orderName) {
+    return _deliveryTransition(
+      'madar.api.delivery.mark_delivered_to_customer',
+      orderName,
+      fallback: 'تعذر تسجيل التسليم للعميل',
+    );
+  }
+
+  Future<MadarOrder> markFailedDelivery(
+    String orderName, {
+    required String reason,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.delivery.mark_failed_delivery'),
+      headers: _headers(),
+      body: {'order_name': orderName, 'reason': reason},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسجيل تعذر التسليم');
+    return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarOrder> _deliveryTransition(
+    String method,
+    String orderName, {
+    required String fallback,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(method),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: fallback);
     return MadarOrder.fromEnvelope(_safeEnvelope(response));
   }
 

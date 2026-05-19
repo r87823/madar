@@ -99,6 +99,108 @@ enum OrderProductionStatus {
   }
 }
 
+enum OrderFulfillmentMethod {
+  branchPickup,
+  customerDelivery,
+  unknown;
+
+  String get apiValue {
+    switch (this) {
+      case OrderFulfillmentMethod.branchPickup:
+        return 'branch_pickup';
+      case OrderFulfillmentMethod.customerDelivery:
+        return 'customer_delivery';
+      case OrderFulfillmentMethod.unknown:
+        return '';
+    }
+  }
+
+  String get arabicLabel {
+    switch (this) {
+      case OrderFulfillmentMethod.branchPickup:
+        return 'استلام من الفرع';
+      case OrderFulfillmentMethod.customerDelivery:
+        return 'توصيل للعميل';
+      case OrderFulfillmentMethod.unknown:
+        return 'غير معروف';
+    }
+  }
+
+  static OrderFulfillmentMethod fromString(String? value) {
+    switch (value) {
+      case 'branch_pickup':
+        return OrderFulfillmentMethod.branchPickup;
+      case 'customer_delivery':
+        return OrderFulfillmentMethod.customerDelivery;
+      default:
+        return OrderFulfillmentMethod.unknown;
+    }
+  }
+}
+
+enum OrderDeliveryStatus {
+  notReady,
+  readyForDispatch,
+  dispatchedToBranch,
+  receivedAtBranch,
+  readyForCustomerPickup,
+  customerPickedUp,
+  dispatchedToCustomer,
+  deliveredToCustomer,
+  failedDelivery,
+  unknown;
+
+  String get arabicLabel {
+    switch (this) {
+      case OrderDeliveryStatus.notReady:
+        return 'غير جاهز';
+      case OrderDeliveryStatus.readyForDispatch:
+        return 'جاهز للإرسال';
+      case OrderDeliveryStatus.dispatchedToBranch:
+        return 'خرج إلى الفرع';
+      case OrderDeliveryStatus.receivedAtBranch:
+        return 'تم الاستلام في الفرع';
+      case OrderDeliveryStatus.readyForCustomerPickup:
+        return 'جاهز لاستلام العميل';
+      case OrderDeliveryStatus.customerPickedUp:
+        return 'تم تسليم العميل';
+      case OrderDeliveryStatus.dispatchedToCustomer:
+        return 'خرج للتوصيل';
+      case OrderDeliveryStatus.deliveredToCustomer:
+        return 'تم التسليم للعميل';
+      case OrderDeliveryStatus.failedDelivery:
+        return 'تعذر التسليم';
+      case OrderDeliveryStatus.unknown:
+        return 'غير معروف';
+    }
+  }
+
+  static OrderDeliveryStatus fromString(String? value) {
+    switch (value) {
+      case 'not_ready':
+        return OrderDeliveryStatus.notReady;
+      case 'ready_for_dispatch':
+        return OrderDeliveryStatus.readyForDispatch;
+      case 'dispatched_to_branch':
+        return OrderDeliveryStatus.dispatchedToBranch;
+      case 'received_at_branch':
+        return OrderDeliveryStatus.receivedAtBranch;
+      case 'ready_for_customer_pickup':
+        return OrderDeliveryStatus.readyForCustomerPickup;
+      case 'customer_picked_up':
+        return OrderDeliveryStatus.customerPickedUp;
+      case 'dispatched_to_customer':
+        return OrderDeliveryStatus.dispatchedToCustomer;
+      case 'delivered_to_customer':
+        return OrderDeliveryStatus.deliveredToCustomer;
+      case 'failed_delivery':
+        return OrderDeliveryStatus.failedDelivery;
+      default:
+        return OrderDeliveryStatus.unknown;
+    }
+  }
+}
+
 class MadarOrder {
   const MadarOrder({
     required this.name,
@@ -107,6 +209,8 @@ class MadarOrder {
     required this.status,
     this.branch,
     this.assignedBranch,
+    this.fulfillmentMethod = OrderFulfillmentMethod.branchPickup,
+    this.destinationBranch,
     this.createdByUser,
     this.notes,
     this.subtotal = 0,
@@ -117,6 +221,15 @@ class MadarOrder {
     this.approvedBy,
     this.productionStatus = OrderProductionStatus.notStarted,
     this.productionReadyAt,
+    this.deliveryStatus = OrderDeliveryStatus.notReady,
+    this.readyForDispatchAt,
+    this.dispatchedAt,
+    this.receivedAtBranchAt,
+    this.readyForCustomerPickupAt,
+    this.customerPickedUpAt,
+    this.deliveredAt,
+    this.failedDeliveryAt,
+    this.failedDeliveryReason,
     this.erpSyncStatus,
     this.erpSyncError,
     this.erpSalesOrder,
@@ -128,6 +241,8 @@ class MadarOrder {
   final OrderStatus status;
   final String? branch;
   final String? assignedBranch;
+  final OrderFulfillmentMethod fulfillmentMethod;
+  final String? destinationBranch;
   final String? createdByUser;
   final String? notes;
   final double subtotal;
@@ -138,6 +253,15 @@ class MadarOrder {
   final String? approvedBy;
   final OrderProductionStatus productionStatus;
   final String? productionReadyAt;
+  final OrderDeliveryStatus deliveryStatus;
+  final String? readyForDispatchAt;
+  final String? dispatchedAt;
+  final String? receivedAtBranchAt;
+  final String? readyForCustomerPickupAt;
+  final String? customerPickedUpAt;
+  final String? deliveredAt;
+  final String? failedDeliveryAt;
+  final String? failedDeliveryReason;
   final String? erpSyncStatus;
   final String? erpSyncError;
   final String? erpSalesOrder;
@@ -162,6 +286,10 @@ class MadarOrder {
       status: OrderStatus.fromString(map['order_status']?.toString()),
       branch: map['branch']?.toString(),
       assignedBranch: map['assigned_branch']?.toString(),
+      fulfillmentMethod: OrderFulfillmentMethod.fromString(
+        map['fulfillment_method']?.toString() ?? 'branch_pickup',
+      ),
+      destinationBranch: map['destination_branch']?.toString(),
       createdByUser: map['created_by_user']?.toString(),
       notes: map['notes']?.toString(),
       subtotal: _toDouble(map['subtotal']),
@@ -174,6 +302,17 @@ class MadarOrder {
         map['production_status']?.toString() ?? 'not_started',
       ),
       productionReadyAt: map['production_ready_at']?.toString(),
+      deliveryStatus: OrderDeliveryStatus.fromString(
+        map['delivery_status']?.toString() ?? 'not_ready',
+      ),
+      readyForDispatchAt: map['ready_for_dispatch_at']?.toString(),
+      dispatchedAt: map['dispatched_at']?.toString(),
+      receivedAtBranchAt: map['received_at_branch_at']?.toString(),
+      readyForCustomerPickupAt: map['ready_for_customer_pickup_at']?.toString(),
+      customerPickedUpAt: map['customer_picked_up_at']?.toString(),
+      deliveredAt: map['delivered_at']?.toString(),
+      failedDeliveryAt: map['failed_delivery_at']?.toString(),
+      failedDeliveryReason: map['failed_delivery_reason']?.toString(),
       erpSyncStatus: map['erp_sync_status']?.toString(),
       erpSyncError: map['erp_sync_error']?.toString(),
       erpSalesOrder: map['erp_sales_order']?.toString(),
