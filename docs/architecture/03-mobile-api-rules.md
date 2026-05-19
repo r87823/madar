@@ -79,6 +79,25 @@ Attendance endpoints also use:
 - `ALREADY_CHECKED_IN`.
 - `ALREADY_CHECKED_OUT`.
 
+Order draft endpoints also use:
+
+- `ORDER_NOT_FOUND`.
+- `INVALID_ORDER_TRANSITION`.
+
+## Order Draft Endpoints
+
+R3-T01 exposes Madar operational order draft endpoints only:
+
+```text
+/api/method/madar.api.orders.create_draft
+/api/method/madar.api.orders.list_orders
+/api/method/madar.api.orders.get_order
+/api/method/madar.api.orders.submit_order
+/api/method/madar.api.orders.cancel_order
+```
+
+These endpoints are authenticated, return the shared `ok/data/error` envelope, and must not call ERPNext Sales Order APIs or `/api/resource` endpoints. Flutter sends only customer display fields and notes; Madar derives actor, branch, scopes, and status server-side.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

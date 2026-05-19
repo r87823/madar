@@ -9,12 +9,14 @@ class DashboardScreen extends StatelessWidget {
     required this.context,
     required this.onLogout,
     required this.onOpenAttendance,
+    required this.onOpenOrders,
     super.key,
   });
 
   final UserContext context;
   final Future<void> Function() onLogout;
   final VoidCallback onOpenAttendance;
+  final VoidCallback onOpenOrders;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -93,6 +95,7 @@ class DashboardScreen extends StatelessWidget {
                   return _DashboardCard(
                     card: cards[index],
                     onOpenAttendance: onOpenAttendance,
+                    onOpenOrders: onOpenOrders,
                   );
                 },
               );
@@ -168,10 +171,15 @@ class _ScopeSection extends StatelessWidget {
 }
 
 class _DashboardCard extends StatelessWidget {
-  const _DashboardCard({required this.card, required this.onOpenAttendance});
+  const _DashboardCard({
+    required this.card,
+    required this.onOpenAttendance,
+    required this.onOpenOrders,
+  });
 
   final DashboardCardDefinition card;
   final VoidCallback onOpenAttendance;
+  final VoidCallback onOpenOrders;
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +191,10 @@ class _DashboardCard extends StatelessWidget {
         onTap: () {
           if (card.title == 'الحضور والانصراف') {
             onOpenAttendance();
+            return;
+          }
+          if (card.title == 'إنشاء طلب') {
+            onOpenOrders();
             return;
           }
           ScaffoldMessenger.of(

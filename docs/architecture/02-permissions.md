@@ -108,6 +108,18 @@ For regular users, scope values come from safe Employee context fields. For user
 
 Future order, delivery, payment, cashbox, production, approval, notification, attendance, and leave workflows should consume permission keys and scope helpers instead of checking Frappe roles directly.
 
+## Order Draft Permissions and Scopes
+
+R3-T01 introduces `Madar Order` as a Madar-owned operational document. Order APIs must use permission keys and scope helpers:
+
+- `orders.create` allows creating draft orders and cancelling still-draft orders.
+- `orders.submit_for_approval` allows moving a draft order to `submitted`.
+- `system.full_access` may view all Madar orders.
+- Branch-scoped users may view orders assigned to their scoped branch.
+- Users without branch scope may view only their own created orders.
+
+Endpoint code must not check raw Frappe roles for order actions. The API layer delegates to `madar.services.order_service`, which performs permission and scope decisions before reads or mutations.
+
 ## Sensitive Mutations
 
 Any future sensitive mutation must create an audit log. Examples include payment changes, cashbox actions, delivery status changes, production status changes, approval decisions, and employee self-service mutations.
@@ -124,3 +136,10 @@ The audit record should capture:
 ## Status Transitions
 
 Any future status transition must go through a state machine service. Endpoints and DocType hooks should not independently set workflow status fields for protected operational workflows.
+
+R3-T01 keeps order transitions deliberately small in `madar.services.order_service`:
+
+- `draft` -> `submitted`.
+- `draft` -> `cancelled`.
+- `cancelled` cannot be submitted.
+- `submitted` cannot be cancelled in this phase.

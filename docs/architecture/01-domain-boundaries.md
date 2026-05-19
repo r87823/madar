@@ -17,6 +17,12 @@ Madar owns operational workflows and the mobile-facing orchestration around them
 
 Madar may reference ERPNext and HRMS records, but it should not silently replace their ownership. For example, a Madar workflow may refer to a Customer or Employee, while ERPNext or HRMS remains responsible for the canonical record.
 
+### Operational Order Drafts
+
+`Madar Order` is an operational workflow document owned by Madar. In R3-T01 it supports only draft order capture, scoped viewing, and simple `draft`, `submitted`, and `cancelled` transitions.
+
+`Madar Order` is not an ERPNext Sales Order. Creating, submitting, or cancelling a Madar order must not create stock, accounting, invoice, delivery, payment, or ERPNext Sales Order records. ERPNext integration comes in a later task through explicit server-side services.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:
@@ -52,4 +58,3 @@ Madar employee self-service APIs can expose controlled mobile operations, but HR
 - ERPNext and HRMS records must be changed through supported Frappe document behavior, not direct SQL mutations.
 - Cross-domain workflows must keep a clear audit trail when sensitive data changes.
 - Future domain services should be small, named by capability, and testable without requiring Flutter behavior.
-

@@ -24,6 +24,7 @@ void main() {
             onOpenAttendance: () {
               opened = true;
             },
+            onOpenOrders: () {},
           ),
         ),
       ),

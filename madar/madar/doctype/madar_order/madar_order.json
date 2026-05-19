@@ -1,0 +1,112 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "naming_series:",
+  "creation": "2026-05-19 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "customer_name",
+    "customer_phone",
+    "branch",
+    "assigned_branch",
+    "order_status",
+    "created_by_user",
+    "notes",
+    "submitted_at",
+    "cancelled_at"
+  ],
+  "fields": [
+    {
+      "default": "MADAR-ORD-.YYYY.-",
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "MADAR-ORD-.YYYY.-",
+      "reqd": 1
+    },
+    {
+      "fieldname": "customer_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Customer Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "customer_phone",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Customer Phone"
+    },
+    {
+      "fieldname": "branch",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Branch"
+    },
+    {
+      "fieldname": "assigned_branch",
+      "fieldtype": "Data",
+      "label": "Assigned Branch"
+    },
+    {
+      "default": "draft",
+      "fieldname": "order_status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Order Status",
+      "options": "draft\nsubmitted\ncancelled",
+      "reqd": 1
+    },
+    {
+      "fieldname": "created_by_user",
+      "fieldtype": "Data",
+      "label": "Created By User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    },
+    {
+      "fieldname": "submitted_at",
+      "fieldtype": "Datetime",
+      "label": "Submitted At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cancelled_at",
+      "fieldtype": "Datetime",
+      "label": "Cancelled At",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 0,
+  "links": [],
+  "modified": "2026-05-19 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Madar",
+  "name": "Madar Order",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}
