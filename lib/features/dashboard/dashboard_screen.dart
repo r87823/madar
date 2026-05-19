@@ -12,6 +12,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenOrders,
     required this.onOpenApprovalQueue,
     required this.onOpenErpSyncReview,
+    required this.onOpenProductionMappings,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenOrders;
   final VoidCallback onOpenApprovalQueue;
   final VoidCallback onOpenErpSyncReview;
+  final VoidCallback onOpenProductionMappings;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -102,6 +104,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenOrders: onOpenOrders,
                     onOpenApprovalQueue: onOpenApprovalQueue,
                     onOpenErpSyncReview: onOpenErpSyncReview,
+                    onOpenProductionMappings: onOpenProductionMappings,
                   );
                 },
               );
@@ -183,6 +186,7 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenOrders,
     required this.onOpenApprovalQueue,
     required this.onOpenErpSyncReview,
+    required this.onOpenProductionMappings,
   });
 
   final DashboardCardDefinition card;
@@ -190,6 +194,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onOpenOrders;
   final VoidCallback onOpenApprovalQueue;
   final VoidCallback onOpenErpSyncReview;
+  final VoidCallback onOpenProductionMappings;
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +218,10 @@ class _DashboardCard extends StatelessWidget {
           }
           if (card.title == 'المحاسبة والمزامنة') {
             onOpenErpSyncReview();
+            return;
+          }
+          if (card.title == 'إعدادات الإنتاج') {
+            onOpenProductionMappings();
             return;
           }
           ScaffoldMessenger.of(

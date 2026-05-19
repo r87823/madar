@@ -90,6 +90,14 @@ Order draft endpoints also use:
 - `PRODUCT_NOT_FOUND`.
 - `INVALID_QUANTITY`.
 
+Production mapping endpoints also use:
+
+- `ITEM_NOT_FOUND`.
+- `PRODUCTION_CENTER_NOT_FOUND`.
+- `PRODUCTION_DEPARTMENT_NOT_FOUND`.
+- `CENTER_CODE_REQUIRED`.
+- `DEPARTMENT_CODE_REQUIRED`.
+
 ## Order Draft Endpoints
 
 R3-T01 exposes Madar operational order draft endpoints only:
@@ -146,6 +154,24 @@ R3-T06 adds authenticated Madar-only ERP sync review endpoints:
 ```
 
 They require `accounting.view_sync_logs` and expose only safe sync fields: order name, customer name, subtotal, order status, ERP sync status, safe ERP sync error, ERP Sales Order reference, approved timestamp, and approver. Retry is allowed only for pending or failed sync rows; synced rows return `ORDER_ALREADY_SYNCED`.
+
+## Production Mapping Endpoints
+
+R4-T01 exposes Madar-only production mapping endpoints:
+
+```text
+/api/method/madar.api.production_mapping.list_production_centers
+/api/method/madar.api.production_mapping.list_production_departments
+/api/method/madar.api.production_mapping.list_item_department_mappings
+/api/method/madar.api.production_mapping.create_or_update_production_center
+/api/method/madar.api.production_mapping.create_or_update_production_department
+/api/method/madar.api.production_mapping.create_or_update_item_department_mapping
+/api/method/madar.api.production_mapping.validate_order_department_mappings
+```
+
+Flutter may use these endpoints only through Madar. It must not call ERPNext Item APIs or Frappe `/api/resource` endpoints directly. Product selection continues to use the safe catalog bridge.
+
+Mapping responses expose only production center, production department, item code, item name, and active flags. Validation checks approved Madar orders and returns missing item codes for active mappings. It must not create production work orders, mutate ERPNext, reserve stock, create invoices, create delivery documents, or create payments.
 
 ## Long-Running Work
 

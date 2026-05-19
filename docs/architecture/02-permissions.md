@@ -37,6 +37,7 @@ Initial permission keys include:
 - `orders.approve`.
 - `production.view_work_orders`.
 - `production.update_work_order`.
+- `production.manage_mappings`.
 - `delivery.view_assigned_batches`.
 - `delivery.update_batch`.
 - `payments.collect`.
@@ -139,6 +140,17 @@ R3-T03 approval APIs use:
 - ERP sync boundary helpers must remain internal service methods until a later task defines protected APIs, jobs, and permissions.
 - R3-T05 ERP sync is manual/internal only and has no mobile endpoint. A later task must define explicit admin permissions before exposing sync actions through any API.
 - R3-T06 exposes ERP sync review and retry through Madar APIs for accounting/admin users. These APIs require `accounting.view_sync_logs`; endpoint code delegates to `madar.services.erp_sync_service` and must not check raw roles directly.
+
+## Production Mapping Permissions
+
+R4-T01 introduces production master data and item-to-department mapping as a prerequisite for future work orders:
+
+- `production.view_work_orders` may view active production centers and departments.
+- `production.manage_mappings` may create or update production centers, production departments, and item department mappings.
+- `system.full_access` grants `production.manage_mappings` through the registry, so `Madar Admin`, `Administrator`, and `System Manager` can manage mappings.
+- Branch/order users do not manage production mappings.
+
+Production mapping endpoints must not check raw roles directly. The API layer delegates to `madar.services.production_mapping_service`, which evaluates permission keys and returns stable `PERMISSION_DENIED` errors when needed.
 
 ## Sensitive Mutations
 

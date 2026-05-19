@@ -44,6 +44,11 @@ class DashboardCards {
       requiredAny: {'production.view_work_orders'},
     ),
     DashboardCardDefinition(
+      title: 'إعدادات الإنتاج',
+      icon: Icons.factory_outlined,
+      requiredAny: {'system.full_access', 'production.manage_mappings'},
+    ),
+    DashboardCardDefinition(
       title: 'مهام التوصيل',
       icon: Icons.local_shipping_outlined,
       requiredAny: {'delivery.view_assigned_batches'},

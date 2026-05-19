@@ -33,6 +33,12 @@ R3-T04 freezes approved Madar orders and introduces an internal ERP sync boundar
 
 R3-T05 adds the first one-way internal sync from an approved `Madar Order` to a draft ERPNext `Sales Order`. The Madar order remains the operational workflow source, while the ERPNext Sales Order is the commercial/accounting representation for later ERP processing. This sync does not submit the Sales Order, reserve stock, create Delivery Notes, create Sales Invoices, create Payment Entries, or trigger production.
 
+### Production Mapping Foundation
+
+R4-T01 adds Madar-owned production setup records for production centers, production departments, and item-to-department mappings. These records prepare approved operational orders for future production planning by validating that every order item has an active production department mapping.
+
+This foundation does not create production work orders, mutate ERPNext Items, reserve stock, create delivery records, create invoices, create payments, or post accounting entries.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

@@ -35,6 +35,7 @@ void main() {
               opened = true;
             },
             onOpenErpSyncReview: () {},
+            onOpenProductionMappings: () {},
           ),
         ),
       ),

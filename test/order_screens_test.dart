@@ -37,6 +37,7 @@ void main() {
             },
             onOpenApprovalQueue: () {},
             onOpenErpSyncReview: () {},
+            onOpenProductionMappings: () {},
           ),
         ),
       ),

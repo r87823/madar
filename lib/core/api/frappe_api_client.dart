@@ -9,6 +9,7 @@ import '../../features/attendance/attendance_status.dart';
 import '../../features/orders/items/order_item_models.dart';
 import '../../features/orders/items/product_models.dart';
 import '../../features/orders/order_models.dart';
+import '../../features/production/production_mapping_models.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -234,6 +235,123 @@ class FrappeApiClient {
     return ProductList.fromEnvelope(_safeEnvelope(response));
   }
 
+  Future<ProductionCenterList> listProductionCenters() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.production_mapping.list_production_centers'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل مراكز الإنتاج');
+    return ProductionCenterList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ProductionDepartmentList> listProductionDepartments({
+    String productionCenter = '',
+  }) async {
+    final response = await _httpClient.get(
+      baseUri.replace(
+        path:
+            '/api/method/madar.api.production_mapping.list_production_departments',
+        queryParameters: productionCenter.isEmpty
+            ? null
+            : {'production_center': productionCenter},
+      ),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل أقسام الإنتاج');
+    return ProductionDepartmentList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ProductionMappingList> listItemDepartmentMappings() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.production_mapping.list_item_department_mappings'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل ربط الأصناف');
+    return ProductionMappingList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ProductionCenter> createOrUpdateProductionCenter({
+    required String centerName,
+    required String centerCode,
+    bool isActive = true,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(
+        'madar.api.production_mapping.create_or_update_production_center',
+      ),
+      headers: _headers(),
+      body: {
+        'center_name': centerName,
+        'center_code': centerCode,
+        'is_active': isActive ? '1' : '0',
+      },
+    );
+    _throwIfFailed(response, fallback: 'تعذر حفظ مركز الإنتاج');
+    final data = _safeEnvelope(response)['data'];
+    return ProductionCenter.fromMap(_map(data));
+  }
+
+  Future<ProductionDepartment> createOrUpdateProductionDepartment({
+    required String departmentName,
+    required String departmentCode,
+    required String productionCenter,
+    bool isActive = true,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(
+        'madar.api.production_mapping.create_or_update_production_department',
+      ),
+      headers: _headers(),
+      body: {
+        'department_name': departmentName,
+        'department_code': departmentCode,
+        'production_center': productionCenter,
+        'is_active': isActive ? '1' : '0',
+      },
+    );
+    _throwIfFailed(response, fallback: 'تعذر حفظ قسم الإنتاج');
+    final data = _safeEnvelope(response)['data'];
+    return ProductionDepartment.fromMap(_map(data));
+  }
+
+  Future<ProductionMapping> createOrUpdateItemDepartmentMapping({
+    required String itemCode,
+    required String productionCenter,
+    required String productionDepartment,
+    bool isActive = true,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(
+        'madar.api.production_mapping.create_or_update_item_department_mapping',
+      ),
+      headers: _headers(),
+      body: {
+        'item_code': itemCode,
+        'production_center': productionCenter,
+        'production_department': productionDepartment,
+        'is_active': isActive ? '1' : '0',
+      },
+    );
+    _throwIfFailed(response, fallback: 'تعذر حفظ ربط الصنف');
+    return ProductionMapping.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<OrderDepartmentMappingValidation> validateOrderDepartmentMappings(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri(
+        'madar.api.production_mapping.validate_order_department_mappings',
+      ),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر التحقق من ربط الإنتاج');
+    return OrderDepartmentMappingValidation.fromEnvelope(
+      _safeEnvelope(response),
+    );
+  }
+
   Future<OrderItemList> listOrderItems(String orderName) async {
     final response = await _httpClient.post(
       _methodUri('madar.api.order_items.list_order_items'),
@@ -358,6 +476,12 @@ class FrappeApiClient {
       throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
     }
     return map;
+  }
+
+  Map<String, dynamic> _map(Object? value) {
+    return value is Map
+        ? value.map((key, value) => MapEntry('$key', value))
+        : <String, dynamic>{};
   }
 
   Map<String, dynamic> _normalizeItemMutationEnvelope(http.Response response) {

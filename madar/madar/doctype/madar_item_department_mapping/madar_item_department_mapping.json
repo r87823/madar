@@ -1,0 +1,81 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "field:item_code",
+  "creation": "2026-05-19 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "item_code",
+    "item_name",
+    "production_center",
+    "production_department",
+    "is_active"
+  ],
+  "fields": [
+    {
+      "fieldname": "item_code",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Item Code",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "item_name",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Item Name",
+      "read_only": 1
+    },
+    {
+      "fieldname": "production_center",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Production Center",
+      "options": "Madar Production Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "production_department",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Production Department",
+      "options": "Madar Production Department",
+      "reqd": 1
+    },
+    {
+      "default": "1",
+      "fieldname": "is_active",
+      "fieldtype": "Check",
+      "in_list_view": 1,
+      "label": "Is Active"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 0,
+  "links": [],
+  "modified": "2026-05-19 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Madar",
+  "name": "Madar Item Department Mapping",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}

@@ -21,6 +21,7 @@ ALL_PERMISSION_KEYS = [
     "orders.approve",
     "production.view_work_orders",
     "production.update_work_order",
+    "production.manage_mappings",
     "delivery.view_assigned_batches",
     "delivery.update_batch",
     "payments.collect",
