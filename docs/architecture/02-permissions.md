@@ -43,6 +43,7 @@ Initial permission keys include:
 - `payments.collect`.
 - `cashbox.view_own`.
 - `cashbox.submit`.
+- `cashbox.review`.
 - `accounting.view_sync_logs`.
 
 The current registry maps these keys to Frappe roles as a foundation step. `system.full_access` grants every Madar permission key. Future tasks may replace or extend this mapping with DocType-backed rules, but endpoint code should continue to ask permission-key questions.
@@ -70,8 +71,8 @@ The permission registry maps Madar roles to permission keys:
 - `Madar Branch Supervisor` grants order approval permission.
 - `Madar Production User` grants production work-order view/update permissions.
 - `Madar Driver` grants delivery batch update, payment collection, and own cashbox submit permissions.
-- `Madar Cashier` grants payment collection and own cashbox submit permissions.
-- `Madar Accountant` grants accounting sync log view permission.
+- `Madar Cashier` grants payment collection, own cashbox submit, and cashbox review permissions.
+- `Madar Accountant` grants accounting sync log view and cashbox review permissions.
 
 Frappe built-in `Administrator`, `System Manager`, and `Employee` mappings remain supported for compatibility and system administration. Future protected actions should use permission keys and scope helpers, not raw role checks.
 
@@ -172,6 +173,17 @@ R5-T01 introduces delivery readiness and dispatch queue permissions:
 - `system.full_access` can view and update all delivery states.
 
 Delivery endpoint code must not check raw Frappe roles directly. It must use permission keys and branch scope helpers, and return `PERMISSION_DENIED` or `OUT_OF_SCOPE` for unauthorized transitions.
+
+## Cashbox Permissions
+
+R6-T02 introduces Madar-owned daily cashbox custody for cash payments:
+
+- `cashbox.view_own` allows the authenticated user to view their own current daily cashbox and linked entries.
+- `cashbox.submit` allows the authenticated user to submit their own open or returned cashbox.
+- `cashbox.review` allows cashier/accountant/admin review actions such as listing submitted cashboxes, approving, and returning with a reason.
+- `system.full_access` grants all cashbox capabilities through the registry.
+
+Cashbox endpoint code must not check raw Frappe roles directly. The API layer delegates to `madar.services.cashbox_service`, which evaluates permission keys and returns stable errors such as `PERMISSION_DENIED`, `CASHBOX_NOT_SUBMITTED`, and `CASHBOX_RETURN_REASON_REQUIRED`.
 
 ## Sensitive Mutations
 

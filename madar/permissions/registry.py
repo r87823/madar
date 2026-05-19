@@ -27,6 +27,7 @@ ALL_PERMISSION_KEYS = [
     "payments.collect",
     "cashbox.view_own",
     "cashbox.submit",
+    "cashbox.review",
     "accounting.view_sync_logs",
 ]
 
@@ -67,10 +68,12 @@ ROLE_PERMISSION_MAP = {
     ],
     MADAR_ACCOUNTANT: [
         "accounting.view_sync_logs",
+        "cashbox.review",
     ],
     MADAR_CASHIER: [
         "payments.collect",
         "cashbox.view_own",
         "cashbox.submit",
+        "cashbox.review",
     ],
 }

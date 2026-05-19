@@ -5,6 +5,7 @@ import '../core/auth/auth_controller.dart';
 import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/accounting/erp_sync_review_screen.dart';
+import '../features/cashbox/cashbox_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/delivery/delivery_batch_list_screen.dart';
 import '../features/delivery/dispatch_queue_screen.dart';
@@ -134,6 +135,16 @@ class _MadarAppState extends State<MadarApp> {
                 MaterialPageRoute(
                   builder: (_) =>
                       DeliveryBatchListScreen(apiClient: _apiClient),
+                ),
+              );
+            },
+            onOpenCashbox: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => CashboxScreen(
+                    apiClient: _apiClient,
+                    userContext: currentContext,
+                  ),
                 ),
               );
             },

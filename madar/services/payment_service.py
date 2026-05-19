@@ -99,11 +99,21 @@ def collect_payment(
     payment.insert(ignore_permissions=True)
     _audit(payment, "collect_payment", user, frappe_module)
 
+    cashbox = None
+    if payment_method == "cash":
+        from madar.services import cashbox_service
+
+        cashbox = cashbox_service.record_cash_payment(payment, frappe_module=frappe_module)
+        if not cashbox["ok"]:
+            return cashbox
+
     _recalculate_order_payment_summary(order, frappe_module)
     _audit(order, "recalculate_payment_summary", user, frappe_module)
     _commit(frappe_module)
     data = _serialize_payment(payment)
     data["order"] = _serialize_order_payment(order)
+    if cashbox:
+        data["cashbox"] = cashbox["data"]
     return _ok(data)
 
 

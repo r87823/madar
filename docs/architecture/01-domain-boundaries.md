@@ -53,7 +53,13 @@ Branch pickup orders form `branch_transfer` batches and must share the same dest
 
 R6-T01 adds `Madar Payment` as the operational collection record. Madar updates payment summaries on `Madar Order` (`paid_amount`, `remaining_amount`, and `payment_status`) from collected Madar payments only.
 
-Operational payments are not ERPNext accounting entries. This phase must not create ERPNext `Payment Entry`, `Sales Invoice`, cashbox records, refunds, terminal integrations, or accounting postings. ERPNext payment synchronization and cashbox custody are later explicit workflows.
+Operational payments are not ERPNext accounting entries. R6-T01 must not create ERPNext `Payment Entry`, `Sales Invoice`, refunds, terminal integrations, or accounting postings.
+
+### Cashbox Custody
+
+R6-T02 adds Madar-owned daily cashbox custody for operational cash payments. Cashbox records and entries are custody records only: they track who collected cash, the daily expected cash from linked `Madar Payment` rows, submitted cash, differences, and cashier/accountant review.
+
+Cashbox custody does not create ERPNext `Payment Entry`, `Sales Invoice`, GL entries, bank reconciliation records, refunds, or cash account postings. ERPNext accounting synchronization remains a later explicit workflow.
 
 ## ERPNext-Owned Domains
 

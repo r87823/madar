@@ -40,7 +40,8 @@ class PaymentServiceTest(unittest.TestCase):
         self.assertEqual(fake_frappe.payments[1]["reference_no"], "REF-123")
         self.assertEqual(fake_frappe.created_erp_payment_entries, [])
         self.assertEqual(fake_frappe.created_sales_invoices, [])
-        self.assertEqual(fake_frappe.created_cashbox_entries, [])
+        self.assertEqual(len(fake_frappe.cashbox_entries), 1)
+        self.assertEqual(fake_frappe.cashbox_entries[0]["payment"], "PAY-1")
 
     def test_payment_amount_method_and_overpay_are_rejected(self):
         fake_frappe = FakeFrappe(
@@ -346,11 +347,12 @@ class FakeFrappe:
         self.payments = list(payments or [])
         self.delivery_batches = list(delivery_batches or [])
         self.delivery_batch_orders = list(delivery_batch_orders or [])
+        self.cashboxes = []
+        self.cashbox_entries = []
         self.now = datetime(2026, 5, 19, 12, 0, 0)
         self.audit_events = []
         self.created_erp_payment_entries = []
         self.created_sales_invoices = []
-        self.created_cashbox_entries = []
         self.db = types.SimpleNamespace(commit=lambda: None)
         self.utils = types.SimpleNamespace(now_datetime=lambda: self.now)
 
@@ -367,6 +369,10 @@ class FakeFrappe:
             values = dict(doctype_or_values)
             if values["doctype"] == "Madar Payment":
                 values["name"] = f"PAY-{len(self.payments) + 1}"
+            elif values["doctype"] == "Madar Cashbox":
+                values["name"] = f"CASHBOX-{len(self.cashboxes) + 1}"
+            elif values["doctype"] == "Madar Cashbox Entry":
+                values["name"] = f"CASHBOX-ENTRY-{len(self.cashbox_entries) + 1}"
             return FakeDoc(self, values)
         if doctype_or_values == "Payment Entry":
             self.created_erp_payment_entries.append(name)
@@ -374,14 +380,13 @@ class FakeFrappe:
         if doctype_or_values == "Sales Invoice":
             self.created_sales_invoices.append(name)
             raise AssertionError("Madar payments must not create Sales Invoice")
-        if doctype_or_values == "Madar Cashbox Entry":
-            self.created_cashbox_entries.append(name)
-            raise AssertionError("Madar payments must not create cashbox entries")
         rows = {
             "Madar Order": self.orders,
             "Madar Payment": self.payments,
             "Madar Delivery Batch": self.delivery_batches,
             "Madar Delivery Batch Order": self.delivery_batch_orders,
+            "Madar Cashbox": self.cashboxes,
+            "Madar Cashbox Entry": self.cashbox_entries,
         }.get(doctype_or_values, [])
         for row in rows:
             if row.get("doctype") == doctype_or_values and row.get("name") == name:
@@ -399,6 +404,10 @@ class FakeFrappe:
             rows = list(self.delivery_batches)
         elif doctype == "Madar Delivery Batch Order":
             rows = list(self.delivery_batch_orders)
+        elif doctype == "Madar Cashbox":
+            rows = list(self.cashboxes)
+        elif doctype == "Madar Cashbox Entry":
+            rows = list(self.cashbox_entries)
         else:
             rows = []
         rows = self._filter_rows(rows, filters)
@@ -409,6 +418,10 @@ class FakeFrappe:
     def insert_doc(self, values):
         if values["doctype"] == "Madar Payment":
             self.payments.append(values)
+        elif values["doctype"] == "Madar Cashbox":
+            self.cashboxes.append(values)
+        elif values["doctype"] == "Madar Cashbox Entry":
+            self.cashbox_entries.append(values)
         else:
             raise AssertionError(values["doctype"])
 

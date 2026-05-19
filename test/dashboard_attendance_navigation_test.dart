@@ -39,4 +39,42 @@ void main() {
 
     expect(opened, isTrue);
   });
+
+  testWidgets('cashbox dashboard card opens my cashbox screen', (tester) async {
+    var opened = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: DashboardScreen(
+            context: const UserContext(
+              user: 'cashier.test@example.com',
+              fullName: 'Cashier',
+              roles: ['Madar Cashier'],
+              permissions: ['cashbox.view_own', 'cashbox.submit'],
+              scopes: ScopeContext(
+                branchNames: ['Main Branch'],
+                departmentNames: ['Finance'],
+              ),
+            ),
+            onLogout: () async {},
+            onOpenAttendance: () {},
+            onOpenOrders: () {},
+            onOpenApprovalQueue: () {},
+            onOpenErpSyncReview: () {},
+            onOpenProductionMappings: () {},
+            onOpenWorkOrders: () {},
+            onOpenCashbox: () {
+              opened = true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('الصندوق'));
+    await tester.pump();
+
+    expect(opened, isTrue);
+  });
 }

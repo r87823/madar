@@ -53,11 +53,11 @@ class MadarRoleRegistryTest(unittest.TestCase):
         )
         self.assertEqual(
             checks.get_permissions_for_roles(["Madar Cashier"]),
-            ["payments.collect", "cashbox.view_own", "cashbox.submit"],
+            ["payments.collect", "cashbox.view_own", "cashbox.submit", "cashbox.review"],
         )
         self.assertEqual(
             checks.get_permissions_for_roles(["Madar Accountant"]),
-            ["accounting.view_sync_logs"],
+            ["cashbox.review", "accounting.view_sync_logs"],
         )
 
     def test_system_full_access_still_grants_all_permissions(self):
@@ -73,6 +73,7 @@ class MadarRoleRegistryTest(unittest.TestCase):
                 "payments.collect",
                 "cashbox.view_own",
                 "cashbox.submit",
+                "cashbox.review",
             ],
         )
 

@@ -31,6 +31,7 @@ class PermissionRegistryTest(unittest.TestCase):
                 "payments.collect",
                 "cashbox.view_own",
                 "cashbox.submit",
+                "cashbox.review",
             ],
         )
 

@@ -1,0 +1,130 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "naming_series:",
+  "creation": "2026-05-19 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "user",
+    "cashbox_date",
+    "status",
+    "expected_cash",
+    "submitted_cash",
+    "difference",
+    "submitted_at",
+    "reviewed_by",
+    "reviewed_at",
+    "return_reason",
+    "closed_at"
+  ],
+  "fields": [
+    {
+      "default": "MADAR-CASHBOX-.YYYY.-",
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "MADAR-CASHBOX-.YYYY.-",
+      "reqd": 1
+    },
+    {
+      "fieldname": "user",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "User",
+      "options": "User",
+      "reqd": 1
+    },
+    {
+      "fieldname": "cashbox_date",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "label": "Cashbox Date",
+      "reqd": 1
+    },
+    {
+      "default": "open",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "open\nsubmitted\napproved\nreturned\nclosed",
+      "reqd": 1
+    },
+    {
+      "fieldname": "expected_cash",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "label": "Expected Cash",
+      "read_only": 1
+    },
+    {
+      "fieldname": "submitted_cash",
+      "fieldtype": "Currency",
+      "label": "Submitted Cash"
+    },
+    {
+      "fieldname": "difference",
+      "fieldtype": "Currency",
+      "label": "Difference",
+      "read_only": 1
+    },
+    {
+      "fieldname": "submitted_at",
+      "fieldtype": "Datetime",
+      "label": "Submitted At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reviewed_by",
+      "fieldtype": "Data",
+      "label": "Reviewed By",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reviewed_at",
+      "fieldtype": "Datetime",
+      "label": "Reviewed At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "return_reason",
+      "fieldtype": "Small Text",
+      "label": "Return Reason",
+      "read_only": 1
+    },
+    {
+      "fieldname": "closed_at",
+      "fieldtype": "Datetime",
+      "label": "Closed At",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 0,
+  "links": [],
+  "modified": "2026-05-19 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Madar",
+  "name": "Madar Cashbox",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}

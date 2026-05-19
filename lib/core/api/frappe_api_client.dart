@@ -6,6 +6,7 @@ import '../auth/session_store.dart';
 import '../auth/user_context.dart';
 import '../../features/accounting/erp_sync_models.dart';
 import '../../features/attendance/attendance_status.dart';
+import '../../features/cashbox/cashbox_models.dart';
 import '../../features/delivery/delivery_batch_models.dart';
 import '../../features/orders/items/order_item_models.dart';
 import '../../features/orders/items/product_models.dart';
@@ -258,6 +259,79 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر تحصيل الدفع');
     return PaymentCollectionResult.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<Cashbox> getMyCashbox() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.cashbox.get_my_cashbox'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل الصندوق');
+    return Cashbox.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<CashboxEntryList> listMyCashboxEntries({
+    String cashboxName = '',
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.cashbox.list_my_cashbox_entries'),
+      headers: _headers(),
+      body: {if (cashboxName.isNotEmpty) 'cashbox_name': cashboxName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل قيود الصندوق');
+    return CashboxEntryList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<Cashbox> submitMyCashbox(double submittedCash) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.cashbox.submit_my_cashbox'),
+      headers: _headers(),
+      body: {'submitted_cash': submittedCash.toString()},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسليم الصندوق');
+    return Cashbox.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<CashboxList> listCashboxesForReview() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.cashbox.list_cashboxes_for_review'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل صناديق المراجعة');
+    return CashboxList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<Cashbox> getCashbox(String cashboxName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.cashbox.get_cashbox'),
+      headers: _headers(),
+      body: {'cashbox_name': cashboxName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل الصندوق');
+    return Cashbox.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<Cashbox> approveCashbox(String cashboxName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.cashbox.approve_cashbox'),
+      headers: _headers(),
+      body: {'cashbox_name': cashboxName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر اعتماد الصندوق');
+    return Cashbox.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<Cashbox> returnCashbox({
+    required String cashboxName,
+    required String reason,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.cashbox.return_cashbox'),
+      headers: _headers(),
+      body: {'cashbox_name': cashboxName, 'reason': reason},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إعادة الصندوق');
+    return Cashbox.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<DeliveryBatch> createDeliveryBatch(List<String> orderNames) async {

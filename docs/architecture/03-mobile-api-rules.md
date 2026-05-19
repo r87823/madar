@@ -262,7 +262,25 @@ Flutter may send only `order_name`, `amount`, `payment_method`, optional `refere
 
 Branch pickup collection is branch-scoped. Customer delivery collection is limited to orders linked to a delivery batch assigned to the driver. `system.full_access` may collect as admin context.
 
-This phase must not create ERPNext `Payment Entry`, `Sales Invoice`, cashbox entries, refunds, terminal transactions, or accounting ledger entries.
+R6-T01 must not create ERPNext `Payment Entry`, `Sales Invoice`, refunds, terminal transactions, or accounting ledger entries. R6-T02 adds Madar cashbox custody for cash payments only; it still must not create ERPNext accounting documents.
+
+## Cashbox Endpoints
+
+R6-T02 exposes Madar-only operational cashbox endpoints:
+
+```text
+/api/method/madar.api.cashbox.get_my_cashbox
+/api/method/madar.api.cashbox.list_my_cashbox_entries
+/api/method/madar.api.cashbox.submit_my_cashbox
+/api/method/madar.api.cashbox.list_cashboxes_for_review
+/api/method/madar.api.cashbox.get_cashbox
+/api/method/madar.api.cashbox.approve_cashbox
+/api/method/madar.api.cashbox.return_cashbox
+```
+
+These endpoints require authentication and use permission keys. Flutter may submit only `submitted_cash` for the user's own cashbox and a return reason for review actions. Flutter must not send expected cash, calculated difference, payment links, ERPNext Payment Entry data, Sales Invoice data, or accounting posting fields.
+
+Expected cash is calculated from `Madar Cashbox Entry` records created server-side when a collected `Madar Payment` uses `payment_method=cash`. Non-cash methods must not create cashbox entries. Cashbox records are operational custody records only and must not create ERPNext `Payment Entry`, `Sales Invoice`, GL entries, bank reconciliation records, or refunds.
 
 ## Long-Running Work
 

@@ -16,6 +16,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenWorkOrders,
     this.onOpenDispatchQueue,
     this.onOpenMyDeliveryBatches,
+    this.onOpenCashbox,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenWorkOrders;
   final VoidCallback? onOpenDispatchQueue;
   final VoidCallback? onOpenMyDeliveryBatches;
+  final VoidCallback? onOpenCashbox;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -114,6 +116,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenWorkOrders: onOpenWorkOrders,
                     onOpenDispatchQueue: onOpenDispatchQueue,
                     onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
+                    onOpenCashbox: onOpenCashbox,
                   );
                 },
               );
@@ -199,6 +202,7 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenWorkOrders,
     this.onOpenDispatchQueue,
     this.onOpenMyDeliveryBatches,
+    this.onOpenCashbox,
   });
 
   final DashboardCardDefinition card;
@@ -210,6 +214,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onOpenWorkOrders;
   final VoidCallback? onOpenDispatchQueue;
   final VoidCallback? onOpenMyDeliveryBatches;
+  final VoidCallback? onOpenCashbox;
 
   @override
   Widget build(BuildContext context) {
@@ -249,6 +254,10 @@ class _DashboardCard extends StatelessWidget {
           }
           if (card.title == 'دفعاتي' && onOpenMyDeliveryBatches != null) {
             onOpenMyDeliveryBatches!();
+            return;
+          }
+          if (card.title == 'الصندوق' && onOpenCashbox != null) {
+            onOpenCashbox!();
             return;
           }
           ScaffoldMessenger.of(
