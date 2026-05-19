@@ -13,6 +13,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenApprovalQueue,
     required this.onOpenErpSyncReview,
     required this.onOpenProductionMappings,
+    required this.onOpenWorkOrders,
     super.key,
   });
 
@@ -23,6 +24,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenApprovalQueue;
   final VoidCallback onOpenErpSyncReview;
   final VoidCallback onOpenProductionMappings;
+  final VoidCallback onOpenWorkOrders;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -105,6 +107,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenApprovalQueue: onOpenApprovalQueue,
                     onOpenErpSyncReview: onOpenErpSyncReview,
                     onOpenProductionMappings: onOpenProductionMappings,
+                    onOpenWorkOrders: onOpenWorkOrders,
                   );
                 },
               );
@@ -187,6 +190,7 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenApprovalQueue,
     required this.onOpenErpSyncReview,
     required this.onOpenProductionMappings,
+    required this.onOpenWorkOrders,
   });
 
   final DashboardCardDefinition card;
@@ -195,6 +199,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onOpenApprovalQueue;
   final VoidCallback onOpenErpSyncReview;
   final VoidCallback onOpenProductionMappings;
+  final VoidCallback onOpenWorkOrders;
 
   @override
   Widget build(BuildContext context) {
@@ -214,6 +219,10 @@ class _DashboardCard extends StatelessWidget {
           }
           if (card.title == 'اعتماد الطلبات') {
             onOpenApprovalQueue();
+            return;
+          }
+          if (card.title == 'أوامر الإنتاج') {
+            onOpenWorkOrders();
             return;
           }
           if (card.title == 'المحاسبة والمزامنة') {

@@ -1,0 +1,125 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "naming_series:",
+  "creation": "2026-05-19 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "naming_series",
+    "madar_order",
+    "production_center",
+    "production_department",
+    "status",
+    "accepted_at",
+    "started_at",
+    "ready_at",
+    "delayed_at",
+    "delay_reason",
+    "created_from_order_at"
+  ],
+  "fields": [
+    {
+      "default": "MADAR-WO-.YYYY.-",
+      "fieldname": "naming_series",
+      "fieldtype": "Select",
+      "label": "Naming Series",
+      "options": "MADAR-WO-.YYYY.-",
+      "reqd": 1
+    },
+    {
+      "fieldname": "madar_order",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Madar Order",
+      "options": "Madar Order",
+      "reqd": 1
+    },
+    {
+      "fieldname": "production_center",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Production Center",
+      "options": "Madar Production Center",
+      "reqd": 1
+    },
+    {
+      "fieldname": "production_department",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Production Department",
+      "options": "Madar Production Department",
+      "reqd": 1
+    },
+    {
+      "default": "pending",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "pending\naccepted\nin_production\nready\ndelayed",
+      "reqd": 1
+    },
+    {
+      "fieldname": "accepted_at",
+      "fieldtype": "Datetime",
+      "label": "Accepted At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "started_at",
+      "fieldtype": "Datetime",
+      "label": "Started At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "ready_at",
+      "fieldtype": "Datetime",
+      "label": "Ready At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "delayed_at",
+      "fieldtype": "Datetime",
+      "label": "Delayed At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "delay_reason",
+      "fieldtype": "Small Text",
+      "label": "Delay Reason"
+    },
+    {
+      "fieldname": "created_from_order_at",
+      "fieldtype": "Datetime",
+      "label": "Created From Order At",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 0,
+  "links": [],
+  "modified": "2026-05-19 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Madar",
+  "name": "Madar Work Order",
+  "naming_rule": "By \"Naming Series\" field",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}

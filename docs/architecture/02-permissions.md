@@ -152,6 +152,16 @@ R4-T01 introduces production master data and item-to-department mapping as a pre
 
 Production mapping endpoints must not check raw roles directly. The API layer delegates to `madar.services.production_mapping_service`, which evaluates permission keys and returns stable `PERMISSION_DENIED` errors when needed.
 
+## Production Work Order Permissions
+
+R4-T02 introduces Madar-owned department work orders created from approved, fully mapped Madar Orders:
+
+- `production.manage_mappings` or `system.full_access` may create department work orders from an approved Madar Order.
+- `production.view_work_orders` may list and open work orders in the user's department scope.
+- `production.update_work_order` may accept, start, mark ready, or delay scoped work orders.
+
+Work order endpoint code must not check raw Frappe roles directly. Lifecycle transitions are centralized in `madar.services.work_order_service`, and branch users cannot update production work orders unless they also receive explicit production permissions.
+
 ## Sensitive Mutations
 
 Any future sensitive mutation must create an audit log. Examples include payment changes, cashbox actions, delivery status changes, production status changes, approval decisions, and employee self-service mutations.

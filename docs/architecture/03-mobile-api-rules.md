@@ -98,6 +98,12 @@ Production mapping endpoints also use:
 - `CENTER_CODE_REQUIRED`.
 - `DEPARTMENT_CODE_REQUIRED`.
 
+Production work order endpoints also use:
+
+- `WORK_ORDER_NOT_FOUND`.
+- `ITEM_DEPARTMENT_MAPPING_MISSING`.
+- `INVALID_WORK_ORDER_TRANSITION`.
+
 ## Order Draft Endpoints
 
 R3-T01 exposes Madar operational order draft endpoints only:
@@ -172,6 +178,24 @@ R4-T01 exposes Madar-only production mapping endpoints:
 Flutter may use these endpoints only through Madar. It must not call ERPNext Item APIs or Frappe `/api/resource` endpoints directly. Product selection continues to use the safe catalog bridge.
 
 Mapping responses expose only production center, production department, item code, item name, and active flags. Validation checks approved Madar orders and returns missing item codes for active mappings. It must not create production work orders, mutate ERPNext, reserve stock, create invoices, create delivery documents, or create payments.
+
+## Production Work Order Endpoints
+
+R4-T02 exposes Madar-only production work order endpoints:
+
+```text
+/api/method/madar.api.work_orders.create_work_orders_from_order
+/api/method/madar.api.work_orders.list_work_orders
+/api/method/madar.api.work_orders.get_work_order
+/api/method/madar.api.work_orders.accept_work_order
+/api/method/madar.api.work_orders.start_work_order
+/api/method/madar.api.work_orders.mark_work_order_ready
+/api/method/madar.api.work_orders.mark_work_order_delayed
+```
+
+These endpoints create and update Madar operational work orders only. They must not create ERPNext `Work Order`, manufacturing BOM, stock reservation, Delivery Note, Sales Invoice, Payment Entry, payroll, or cashbox records.
+
+Flutter sends only a Madar work order name and, for delay, a reason. Madar derives actor, scope, status transition, timestamps, and audit comments server-side.
 
 ## Long-Running Work
 

@@ -10,6 +10,7 @@ import '../../features/orders/items/order_item_models.dart';
 import '../../features/orders/items/product_models.dart';
 import '../../features/orders/order_models.dart';
 import '../../features/production/production_mapping_models.dart';
+import '../../features/production/work_order_models.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -350,6 +351,86 @@ class FrappeApiClient {
     return OrderDepartmentMappingValidation.fromEnvelope(
       _safeEnvelope(response),
     );
+  }
+
+  Future<WorkOrderList> createWorkOrdersFromOrder(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.work_orders.create_work_orders_from_order'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إنشاء أوامر الإنتاج');
+    return WorkOrderList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<WorkOrderList> listWorkOrders() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.work_orders.list_work_orders'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل أوامر الإنتاج');
+    return WorkOrderList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<WorkOrder> getWorkOrder(String workOrderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.work_orders.get_work_order'),
+      headers: _headers(),
+      body: {'work_order_name': workOrderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل أمر الإنتاج');
+    return WorkOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<WorkOrder> acceptWorkOrder(String workOrderName) {
+    return _workOrderTransition(
+      'madar.api.work_orders.accept_work_order',
+      workOrderName,
+      fallback: 'تعذر قبول أمر الإنتاج',
+    );
+  }
+
+  Future<WorkOrder> startWorkOrder(String workOrderName) {
+    return _workOrderTransition(
+      'madar.api.work_orders.start_work_order',
+      workOrderName,
+      fallback: 'تعذر بدء الإنتاج',
+    );
+  }
+
+  Future<WorkOrder> markWorkOrderReady(String workOrderName) {
+    return _workOrderTransition(
+      'madar.api.work_orders.mark_work_order_ready',
+      workOrderName,
+      fallback: 'تعذر وضع أمر الإنتاج كجاهز',
+    );
+  }
+
+  Future<WorkOrder> markWorkOrderDelayed(
+    String workOrderName, {
+    required String reason,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.work_orders.mark_work_order_delayed'),
+      headers: _headers(),
+      body: {'work_order_name': workOrderName, 'reason': reason},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسجيل التأخير');
+    return WorkOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<WorkOrder> _workOrderTransition(
+    String method,
+    String workOrderName, {
+    required String fallback,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(method),
+      headers: _headers(),
+      body: {'work_order_name': workOrderName},
+    );
+    _throwIfFailed(response, fallback: fallback);
+    return WorkOrder.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<OrderItemList> listOrderItems(String orderName) async {

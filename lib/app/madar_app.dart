@@ -9,6 +9,7 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/orders/approval_queue_screen.dart';
 import '../features/orders/order_list_screen.dart';
 import '../features/production/production_mapping_screen.dart';
+import '../features/production/work_order_list_screen.dart';
 
 class MadarApp extends StatefulWidget {
   const MadarApp({super.key});
@@ -106,6 +107,13 @@ class _MadarAppState extends State<MadarApp> {
                 MaterialPageRoute(
                   builder: (_) =>
                       ProductionMappingScreen(apiClient: _apiClient),
+                ),
+              );
+            },
+            onOpenWorkOrders: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => WorkOrderListScreen(apiClient: _apiClient),
                 ),
               );
             },

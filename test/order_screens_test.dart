@@ -38,6 +38,7 @@ void main() {
             onOpenApprovalQueue: () {},
             onOpenErpSyncReview: () {},
             onOpenProductionMappings: () {},
+            onOpenWorkOrders: () {},
           ),
         ),
       ),

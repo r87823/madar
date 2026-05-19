@@ -42,6 +42,7 @@ void main() {
             onOpenProductionMappings: () {
               opened = true;
             },
+            onOpenWorkOrders: () {},
           ),
         ),
       ),
