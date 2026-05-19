@@ -34,6 +34,7 @@ class WorkOrderServiceTest(unittest.TestCase):
             [("MAIN", "BAKERY"), ("MAIN", "DAIRY")],
         )
         self.assertEqual(fake_frappe.work_orders[0]["status"], "pending")
+        self.assertEqual(fake_frappe.orders[0]["production_status"], "pending")
         self.assertEqual(len(fake_frappe.work_order_items), 3)
         self.assertEqual(fake_frappe.created_erp_work_orders, [])
 
@@ -104,6 +105,21 @@ class WorkOrderServiceTest(unittest.TestCase):
         self.assertEqual(invalid["error"]["code"], "ORDER_NOT_APPROVED")
         self.assertEqual(denied["error"]["code"], "PERMISSION_DENIED")
 
+    def test_recalculate_order_production_status_without_work_orders(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Admin"],
+            orders=[_order("MADAR-ORD-1", production_status="pending")],
+        )
+
+        result = work_order_service.recalculate_order_production_status(
+            "MADAR-ORD-1",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["production_status"], "not_started")
+        self.assertEqual(fake_frappe.orders[0]["production_status"], "not_started")
+
     def test_production_user_lists_and_gets_department_scoped_work_orders(self):
         fake_frappe = FakeFrappe(
             roles=["Madar Production User"],
@@ -140,11 +156,14 @@ class WorkOrderServiceTest(unittest.TestCase):
         fake_frappe = FakeFrappe(
             roles=["Madar Production User"],
             employee={"user_id": "production.user@example.com", "department": "DAIRY"},
+            orders=[_order("MADAR-ORD-1")],
             work_orders=[_work_order("WO-1", "MADAR-ORD-1", "MAIN", "DAIRY")],
         )
 
         accepted = work_order_service.accept_work_order("production.user@example.com", "WO-1", fake_frappe)
+        self.assertEqual(fake_frappe.orders[0]["production_status"], "in_progress")
         started = work_order_service.start_work_order("production.user@example.com", "WO-1", fake_frappe)
+        self.assertEqual(fake_frappe.orders[0]["production_status"], "in_progress")
         ready = work_order_service.mark_work_order_ready("production.user@example.com", "WO-1", fake_frappe)
         delayed_without_reason = work_order_service.mark_work_order_delayed(
             "production.user@example.com",
@@ -156,8 +175,101 @@ class WorkOrderServiceTest(unittest.TestCase):
         self.assertEqual(accepted["data"]["status"], "accepted")
         self.assertEqual(started["data"]["status"], "in_production")
         self.assertEqual(ready["data"]["status"], "ready")
+        self.assertEqual(fake_frappe.orders[0]["production_status"], "ready")
+        self.assertEqual(fake_frappe.orders[0]["production_ready_at"], "2026-05-19 12:00:00")
         self.assertEqual(delayed_without_reason["error"]["code"], "REASON_REQUIRED")
         self.assertTrue(fake_frappe.audit_events)
+
+    def test_aggregation_prefers_delayed_and_partial_ready_states(self):
+        partial = FakeFrappe(
+            roles=["Madar Admin"],
+            orders=[_order("MADAR-ORD-1")],
+            work_orders=[
+                _work_order("WO-1", "MADAR-ORD-1", "MAIN", "DAIRY", status="ready"),
+                _work_order("WO-2", "MADAR-ORD-1", "MAIN", "BAKERY", status="pending"),
+            ],
+        )
+        delayed = FakeFrappe(
+            roles=["Madar Admin"],
+            orders=[_order("MADAR-ORD-2")],
+            work_orders=[
+                _work_order("WO-3", "MADAR-ORD-2", "MAIN", "DAIRY", status="ready"),
+                _work_order("WO-4", "MADAR-ORD-2", "MAIN", "BAKERY", status="delayed"),
+            ],
+        )
+
+        partial_result = work_order_service.recalculate_order_production_status(
+            "MADAR-ORD-1",
+            frappe_module=partial,
+        )
+        delayed_result = work_order_service.recalculate_order_production_status(
+            "MADAR-ORD-2",
+            frappe_module=delayed,
+        )
+
+        self.assertEqual(partial_result["data"]["production_status"], "partially_ready")
+        self.assertEqual(delayed_result["data"]["production_status"], "delayed")
+
+    def test_aggregation_marks_unexpected_work_order_state_blocked(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Admin"],
+            orders=[_order("MADAR-ORD-1")],
+            work_orders=[
+                _work_order("WO-1", "MADAR-ORD-1", "MAIN", "DAIRY", status="ready"),
+                _work_order("WO-2", "MADAR-ORD-1", "MAIN", "BAKERY", status="unknown_state"),
+            ],
+        )
+
+        result = work_order_service.recalculate_order_production_status(
+            "MADAR-ORD-1",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["data"]["production_status"], "blocked")
+
+    def test_ready_aggregation_does_not_reset_existing_ready_timestamp(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Admin"],
+            orders=[
+                _order(
+                    "MADAR-ORD-1",
+                    production_status="ready",
+                    production_ready_at="2026-05-19 10:00:00",
+                )
+            ],
+            work_orders=[_work_order("WO-1", "MADAR-ORD-1", "MAIN", "DAIRY", status="ready")],
+        )
+
+        result = work_order_service.recalculate_order_production_status(
+            "MADAR-ORD-1",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["data"]["production_status"], "ready")
+        self.assertEqual(result["data"]["production_ready_at"], "2026-05-19 10:00:00")
+        self.assertEqual(fake_frappe.orders[0]["production_ready_at"], "2026-05-19 10:00:00")
+
+    def test_non_ready_aggregation_clears_ready_timestamp(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Admin"],
+            orders=[
+                _order(
+                    "MADAR-ORD-1",
+                    production_status="ready",
+                    production_ready_at="2026-05-19 10:00:00",
+                )
+            ],
+            work_orders=[_work_order("WO-1", "MADAR-ORD-1", "MAIN", "DAIRY", status="pending")],
+        )
+
+        result = work_order_service.recalculate_order_production_status(
+            "MADAR-ORD-1",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["data"]["production_status"], "pending")
+        self.assertIsNone(result["data"]["production_ready_at"])
+        self.assertIsNone(fake_frappe.orders[0]["production_ready_at"])
 
     def test_delay_allowed_from_pending_or_in_production_only(self):
         pending = FakeFrappe(
@@ -200,11 +312,13 @@ class WorkOrderServiceTest(unittest.TestCase):
         self.assertEqual(fake_frappe.work_orders[0]["status"], "pending")
 
 
-def _order(name, status="approved"):
+def _order(name, status="approved", production_status="not_started", production_ready_at=None):
     return {
         "doctype": "Madar Order",
         "name": name,
         "order_status": status,
+        "production_status": production_status,
+        "production_ready_at": production_ready_at,
     }
 
 

@@ -23,6 +23,8 @@
     "rejected_at",
     "cancelled_at",
     "approval_reason",
+    "production_status",
+    "production_ready_at",
     "erp_sync_status",
     "erp_sync_error",
     "erp_sales_order"
@@ -135,6 +137,20 @@
       "fieldname": "approval_reason",
       "fieldtype": "Small Text",
       "label": "Approval Reason",
+      "read_only": 1
+    },
+    {
+      "default": "not_started",
+      "fieldname": "production_status",
+      "fieldtype": "Select",
+      "label": "Production Status",
+      "options": "not_started\npending\nin_progress\ndelayed\npartially_ready\nready\nblocked",
+      "read_only": 1
+    },
+    {
+      "fieldname": "production_ready_at",
+      "fieldtype": "Datetime",
+      "label": "Production Ready At",
       "read_only": 1
     },
     {

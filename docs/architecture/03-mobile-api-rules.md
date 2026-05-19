@@ -197,6 +197,8 @@ These endpoints create and update Madar operational work orders only. They must 
 
 Flutter sends only a Madar work order name and, for delay, a reason. Madar derives actor, scope, status transition, timestamps, and audit comments server-side.
 
+Work order mutations also update the parent Madar Order production summary server-side. Order responses may include read-only `production_status` and `production_ready_at` fields for Flutter display. Flutter must treat these fields as derived context and must not send production status values.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

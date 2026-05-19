@@ -58,6 +58,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   if (_order.status == OrderStatus.approved)
                     _Row(label: 'مزامنة ERP', value: _erpSyncLabel),
                   _Row(
+                    label: 'الإنتاج',
+                    value: _order.productionStatus.arabicLabel,
+                  ),
+                  _Row(
                     label: 'الفرع',
                     value: _order.assignedBranch ?? _order.branch ?? 'لا يوجد',
                   ),

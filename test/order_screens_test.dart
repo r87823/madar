@@ -85,6 +85,7 @@ void main() {
               customerName: 'عميل معتمد',
               customerPhone: '0500000000',
               status: OrderStatus.approved,
+              productionStatus: OrderProductionStatus.ready,
               erpSyncStatus: 'pending',
               itemsCount: 1,
               subtotal: 12.5,
@@ -97,6 +98,8 @@ void main() {
 
     expect(find.text('معتمد - جاهز للمزامنة'), findsOneWidget);
     expect(find.text('جاهز للمزامنة'), findsOneWidget);
+    expect(find.text('الإنتاج'), findsOneWidget);
+    expect(find.text('جاهز'), findsOneWidget);
     expect(find.text('إضافة صنف'), findsNothing);
     expect(find.text('إرسال الطلب'), findsNothing);
   });

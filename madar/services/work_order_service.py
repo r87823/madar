@@ -31,6 +31,7 @@ WORK_ORDER_ITEM_FIELDS = [
     "notes",
 ]
 MAX_LIST_LIMIT = 100
+KNOWN_WORK_ORDER_STATUSES = {"pending", "accepted", "in_production", "delayed", "ready"}
 
 
 def create_work_orders_from_order(user, order_name, frappe_module=None):
@@ -49,6 +50,7 @@ def create_work_orders_from_order(user, order_name, frappe_module=None):
 
     existing = _work_orders_for_order(frappe_module, order_name)
     if existing:
+        recalculate_order_production_status(order_name, frappe_module=frappe_module)
         return _ok({"items": [_serialize_work_order(row) for row in existing]})
 
     validation = production_mapping_service.validate_order_department_mappings(
@@ -105,6 +107,7 @@ def create_work_orders_from_order(user, order_name, frappe_module=None):
                 }
             ).insert(ignore_permissions=True)
         created.append(work_order)
+    recalculate_order_production_status(order_name, frappe_module=frappe_module)
     _commit(frappe_module)
     return _ok({"items": [_serialize_work_order(row) for row in created]})
 
@@ -232,8 +235,59 @@ def _transition(
         work_order.delay_reason = (reason or "").strip()
     work_order.save(ignore_permissions=True)
     _audit(work_order, action, user, frappe_module, reason=reason)
+    recalculate_order_production_status(
+        _get_value(work_order, "madar_order"),
+        frappe_module=frappe_module,
+    )
     _commit(frappe_module)
     return _ok(_serialize_work_order(work_order))
+
+
+def recalculate_order_production_status(order_name, frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    order = _get_doc(frappe_module, "Madar Order", order_name)
+    if not order:
+        return _error("ORDER_NOT_FOUND", "الطلب غير موجود.")
+
+    work_orders = _work_orders_for_order(frappe_module, order_name)
+    next_status = _aggregate_production_status([_get_value(row, "status") for row in work_orders])
+    current_status = _get_value(order, "production_status") or "not_started"
+    changed = current_status != next_status
+
+    order.production_status = next_status
+    if next_status == "ready" and not _get_value(order, "production_ready_at"):
+        order.production_ready_at = _server_now(frappe_module)
+        changed = True
+    elif next_status != "ready" and _get_value(order, "production_ready_at"):
+        order.production_ready_at = None
+        changed = True
+    order.save(ignore_permissions=True)
+    if changed:
+        _audit(order, "aggregate_production_status", "system", frappe_module, reason=next_status)
+    _commit(frappe_module)
+    return _ok(_serialize_order_production(order))
+
+
+def _aggregate_production_status(statuses):
+    statuses = [status for status in statuses if status]
+    if not statuses:
+        return "not_started"
+    status_set = set(statuses)
+    if not status_set.issubset(KNOWN_WORK_ORDER_STATUSES):
+        return "blocked"
+    if status_set == {"pending"}:
+        return "pending"
+    if status_set == {"ready"}:
+        return "ready"
+    if "delayed" in status_set:
+        return "delayed"
+    if "in_production" in status_set or "accepted" in status_set:
+        return "in_progress"
+    if "ready" in status_set:
+        return "partially_ready"
+    return "blocked"
 
 
 def _work_orders_for_order(frappe_module, order_name):
@@ -335,6 +389,14 @@ def _serialize_item(item):
         "item_name": _get_value(item, "item_name"),
         "qty": _float(_get_value(item, "qty")),
         "notes": _get_value(item, "notes"),
+    }
+
+
+def _serialize_order_production(order):
+    return {
+        "name": _get_value(order, "name"),
+        "production_status": _get_value(order, "production_status") or "not_started",
+        "production_ready_at": _string_or_none(_get_value(order, "production_ready_at")),
     }
 
 

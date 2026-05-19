@@ -21,6 +21,28 @@ void main() {
     expect(OrderStatus.fromString('rejected').arabicLabel, 'مرفوض');
   });
 
+  test('order production statuses include Arabic labels', () {
+    expect(
+      OrderProductionStatus.fromString('not_started').arabicLabel,
+      'لم يبدأ',
+    );
+    expect(
+      OrderProductionStatus.fromString('pending').arabicLabel,
+      'بانتظار الإنتاج',
+    );
+    expect(
+      OrderProductionStatus.fromString('in_progress').arabicLabel,
+      'قيد الإنتاج',
+    );
+    expect(OrderProductionStatus.fromString('delayed').arabicLabel, 'متأخر');
+    expect(
+      OrderProductionStatus.fromString('partially_ready').arabicLabel,
+      'جاهز جزئيًا',
+    );
+    expect(OrderProductionStatus.fromString('ready').arabicLabel, 'جاهز');
+    expect(OrderProductionStatus.fromString('blocked').arabicLabel, 'متوقف');
+  });
+
   test('order display label reflects ERP sync metadata', () {
     const synced = MadarOrder(
       name: 'MADAR-ORD-1',

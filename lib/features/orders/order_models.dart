@@ -46,6 +46,59 @@ enum OrderStatus {
   }
 }
 
+enum OrderProductionStatus {
+  notStarted,
+  pending,
+  inProgress,
+  delayed,
+  partiallyReady,
+  ready,
+  blocked,
+  unknown;
+
+  String get arabicLabel {
+    switch (this) {
+      case OrderProductionStatus.notStarted:
+        return 'لم يبدأ';
+      case OrderProductionStatus.pending:
+        return 'بانتظار الإنتاج';
+      case OrderProductionStatus.inProgress:
+        return 'قيد الإنتاج';
+      case OrderProductionStatus.delayed:
+        return 'متأخر';
+      case OrderProductionStatus.partiallyReady:
+        return 'جاهز جزئيًا';
+      case OrderProductionStatus.ready:
+        return 'جاهز';
+      case OrderProductionStatus.blocked:
+        return 'متوقف';
+      case OrderProductionStatus.unknown:
+        return 'غير معروف';
+    }
+  }
+
+  static OrderProductionStatus fromString(String? value) {
+    switch (value) {
+      case 'not_started':
+        return OrderProductionStatus.notStarted;
+      case 'pending':
+        return OrderProductionStatus.pending;
+      case 'in_progress':
+        return OrderProductionStatus.inProgress;
+      case 'delayed':
+        return OrderProductionStatus.delayed;
+      case 'partially_ready':
+        return OrderProductionStatus.partiallyReady;
+      case 'ready':
+        return OrderProductionStatus.ready;
+      case 'blocked':
+        return OrderProductionStatus.blocked;
+      default:
+        return OrderProductionStatus.unknown;
+    }
+  }
+}
+
 class MadarOrder {
   const MadarOrder({
     required this.name,
@@ -62,6 +115,8 @@ class MadarOrder {
     this.cancelledAt,
     this.approvedAt,
     this.approvedBy,
+    this.productionStatus = OrderProductionStatus.notStarted,
+    this.productionReadyAt,
     this.erpSyncStatus,
     this.erpSyncError,
     this.erpSalesOrder,
@@ -81,6 +136,8 @@ class MadarOrder {
   final String? cancelledAt;
   final String? approvedAt;
   final String? approvedBy;
+  final OrderProductionStatus productionStatus;
+  final String? productionReadyAt;
   final String? erpSyncStatus;
   final String? erpSyncError;
   final String? erpSalesOrder;
@@ -113,6 +170,10 @@ class MadarOrder {
       cancelledAt: map['cancelled_at']?.toString(),
       approvedAt: map['approved_at']?.toString(),
       approvedBy: map['approved_by']?.toString(),
+      productionStatus: OrderProductionStatus.fromString(
+        map['production_status']?.toString() ?? 'not_started',
+      ),
+      productionReadyAt: map['production_ready_at']?.toString(),
       erpSyncStatus: map['erp_sync_status']?.toString(),
       erpSyncError: map['erp_sync_error']?.toString(),
       erpSalesOrder: map['erp_sales_order']?.toString(),

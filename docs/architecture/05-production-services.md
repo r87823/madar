@@ -41,6 +41,22 @@ Lifecycle transitions are intentionally small:
 
 Delay requires a reason. All mutations should add an audit comment when the Frappe document supports it.
 
+## Order Production Status
+
+R4-T03 aggregates Madar work order statuses back onto the parent `Madar Order` through service-layer helpers only. API handlers and Flutter must not set order production fields directly.
+
+`Madar Order.production_status` is derived from child work orders:
+
+- No work orders: `not_started`.
+- All work orders pending: `pending`.
+- Any delayed work order: `delayed`.
+- Any accepted or in-production work order: `in_progress`.
+- Some ready work orders but not all: `partially_ready`.
+- All work orders ready: `ready`.
+- Unexpected mixed or unknown work order states: `blocked`.
+
+When all work orders are ready, `production_ready_at` is set using server time. If the order is already marked ready with an existing ready timestamp, the timestamp is preserved. If aggregation later determines the order is not ready, the ready timestamp is cleared so it is only present for ready production state.
+
 ## API Boundary
 
 All production mapping APIs are authenticated Frappe whitelisted methods under `madar.api.production_mapping`. The API layer only authenticates and delegates to `madar.services.production_mapping_service`.
