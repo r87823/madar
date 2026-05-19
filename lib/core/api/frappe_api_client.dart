@@ -60,6 +60,15 @@ class FrappeApiClient {
     return _attendanceFromResponse(response);
   }
 
+  Future<AttendanceHistory> getAttendanceHistory() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.attendance.get_history'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل سجل الحضور');
+    return _attendanceHistoryFromResponse(response);
+  }
+
   Future<AttendanceStatus> checkIn() async {
     final response = await _httpClient.post(
       _methodUri('madar.api.attendance.check_in'),
@@ -113,6 +122,20 @@ class FrappeApiClient {
       throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
     }
     return AttendanceStatus.fromEnvelope(map);
+  }
+
+  AttendanceHistory _attendanceHistoryFromResponse(http.Response response) {
+    final payload = _decodeJson(response);
+    final message = payload['message'];
+    final map = message is Map
+        ? message.map((key, value) => MapEntry('$key', value))
+        : payload;
+    if (map['ok'] == false) {
+      final error = map['error'];
+      final message = error is Map ? error['message'] : null;
+      throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
+    }
+    return AttendanceHistory.fromEnvelope(map);
   }
 
   void _throwIfFailed(http.Response response, {required String fallback}) {

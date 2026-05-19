@@ -14,6 +14,7 @@ class AttendanceScreen extends StatefulWidget {
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
   AttendanceStatus? _status;
+  AttendanceHistory _history = const AttendanceHistory(items: []);
   bool _isLoading = true;
   String? _message;
   bool _isError = false;
@@ -21,7 +22,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   void initState() {
     super.initState();
-    _loadStatus();
+    _loadAttendance();
   }
 
   @override
@@ -30,7 +31,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('الحضور والانصراف')),
       body: RefreshIndicator(
-        onRefresh: _loadStatus,
+        onRefresh: _loadAttendance,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -83,42 +84,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final buttons = [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () => _submit(checkIn: true),
-                      icon: const Icon(Icons.login),
-                      label: const Text('تسجيل حضور'),
-                    ),
-                  ),
-                  const SizedBox(width: 12, height: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () => _submit(checkIn: false),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('تسجيل انصراف'),
-                    ),
-                  ),
-                ];
-                if (constraints.maxWidth < 520) {
-                  return Column(children: buttons);
-                }
-                return Row(children: buttons);
-              },
+            _ActionButton(
+              status: _status,
+              isLoading: _isLoading,
+              onCheckIn: () => _submit(checkIn: true),
+              onCheckOut: () => _submit(checkIn: false),
             ),
+            const SizedBox(height: 16),
+            _HistorySection(history: _history),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _loadStatus() async {
+  Future<void> _loadAttendance() async {
     setState(() {
       _isLoading = true;
       _message = null;
@@ -126,8 +106,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     });
     try {
       final status = await widget.apiClient.getAttendanceStatus();
+      final history = await widget.apiClient.getAttendanceHistory();
       setState(() {
         _status = status;
+        _history = history;
       });
     } catch (error) {
       setState(() {
@@ -151,8 +133,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final status = checkIn
           ? await widget.apiClient.checkIn()
           : await widget.apiClient.checkOut();
+      final history = await widget.apiClient.getAttendanceHistory();
       setState(() {
         _status = status;
+        _history = history;
         _message = checkIn
             ? 'تم تسجيل الحضور بنجاح.'
             : 'تم تسجيل الانصراف بنجاح.';
@@ -177,6 +161,85 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ? 'انصراف'
         : status.lastLogType ?? 'غير معروف';
     return '$type - ${status.lastTime}';
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.status,
+    required this.isLoading,
+    required this.onCheckIn,
+    required this.onCheckOut,
+  });
+
+  final AttendanceStatus? status;
+  final bool isLoading;
+  final VoidCallback onCheckIn;
+  final VoidCallback onCheckOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentState = status?.state ?? AttendanceState.unknown;
+    if (currentState == AttendanceState.inWork) {
+      return FilledButton.icon(
+        onPressed: isLoading ? null : onCheckOut,
+        icon: const Icon(Icons.logout),
+        label: const Text('تسجيل انصراف'),
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: isLoading ? null : onCheckIn,
+      icon: const Icon(Icons.login),
+      label: const Text('تسجيل حضور'),
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  const _HistorySection({required this.history});
+
+  final AttendanceHistory history;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'آخر تسجيلاتك',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            if (history.items.isEmpty)
+              Text(
+                'لا توجد تسجيلات بعد.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              )
+            else
+              ...history.items.map(
+                (item) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    item.logType == 'IN' ? Icons.login : Icons.logout,
+                  ),
+                  title: Text(item.arabicLogType),
+                  subtitle: Text(item.time),
+                  trailing: Text(item.state.arabicLabel),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

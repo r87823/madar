@@ -7,6 +7,7 @@ from madar.services.employee_context import get_employee_context
 CHECK_IN_PERMISSION = "attendance.check_in"
 CHECK_OUT_PERMISSION = "attendance.check_out"
 DUPLICATE_WINDOW_SECONDS = 60
+HISTORY_LIMIT = 20
 
 
 def get_status(user, frappe_module=None):
@@ -21,11 +22,36 @@ def get_status(user, frappe_module=None):
         return _error("EMPLOYEE_CHECKIN_UNAVAILABLE", "سجل الحضور غير متاح في نظام الموارد البشرية.")
 
     last_checkin = _get_last_checkin(frappe_module, employee["name"])
+    state = _state_from_log_type(_get_value(last_checkin, "log_type"))
+    last_time = _get_value(last_checkin, "time")
     return _ok(
         {
             "employee": employee,
-            "state": _state_from_log_type(_get_value(last_checkin, "log_type")),
+            "state": state,
+            "current_state": state,
+            "last_log_type": _get_value(last_checkin, "log_type"),
+            "last_time": str(last_time) if last_time else None,
             "last_checkin": _serialize_checkin(last_checkin),
+        }
+    )
+
+
+def get_history(user, frappe_module=None, limit=HISTORY_LIMIT):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    employee = _get_linked_employee(user, frappe_module)
+    if not employee:
+        return _error("EMPLOYEE_NOT_LINKED", "لا يوجد موظف مرتبط بالمستخدم الحالي.")
+
+    if not _employee_checkin_available(frappe_module):
+        return _error("EMPLOYEE_CHECKIN_UNAVAILABLE", "سجل الحضور غير متاح في نظام الموارد البشرية.")
+
+    safe_limit = max(1, min(int(limit or HISTORY_LIMIT), HISTORY_LIMIT))
+    rows = _get_checkins(frappe_module, employee["name"], limit=safe_limit)
+    return _ok(
+        {
+            "items": [_serialize_history_item(row) for row in rows],
         }
     )
 
@@ -68,6 +94,12 @@ def _create_checkin(user, log_type, permission_key, frappe_module=None):
     if duplicate and _within_duplicate_window(_get_value(duplicate, "time"), now):
         return _error("DUPLICATE_CHECKIN", "تم تسجيل نفس الحركة قبل لحظات.")
 
+    last_checkin = _get_last_checkin(frappe_module, employee["name"])
+    current_state = _state_from_log_type(_get_value(last_checkin, "log_type"))
+    invalid_error = _invalid_session_error(current_state, log_type)
+    if invalid_error:
+        return invalid_error
+
     created = frappe_module.get_doc(
         {
             "doctype": "Employee Checkin",
@@ -103,14 +135,18 @@ def _employee_checkin_available(frappe_module):
 
 
 def _get_last_checkin(frappe_module, employee_name):
-    rows = frappe_module.get_all(
+    rows = _get_checkins(frappe_module, employee_name, limit=1)
+    return rows[0] if rows else None
+
+
+def _get_checkins(frappe_module, employee_name, limit):
+    return frappe_module.get_all(
         "Employee Checkin",
         filters={"employee": employee_name},
         fields=["name", "employee", "time", "log_type"],
         order_by="time desc",
-        limit=1,
+        limit=limit,
     )
-    return rows[0] if rows else None
 
 
 def _get_recent_same_log(frappe_module, employee_name, log_type):
@@ -147,6 +183,14 @@ def _state_from_log_type(log_type):
     return "unknown"
 
 
+def _invalid_session_error(current_state, log_type):
+    if current_state == "in_work" and log_type == "IN":
+        return _error("ALREADY_CHECKED_IN", "أنت مسجل حضور بالفعل.")
+    if current_state == "out_of_work" and log_type == "OUT":
+        return _error("ALREADY_CHECKED_OUT", "أنت مسجل انصراف بالفعل.")
+    return None
+
+
 def _serialize_checkin(checkin):
     if not checkin:
         return None
@@ -155,6 +199,15 @@ def _serialize_checkin(checkin):
         "employee": _get_value(checkin, "employee"),
         "time": str(_get_value(checkin, "time")),
         "log_type": _get_value(checkin, "log_type"),
+    }
+
+
+def _serialize_history_item(checkin):
+    log_type = _get_value(checkin, "log_type")
+    return {
+        "log_type": log_type,
+        "time": str(_get_value(checkin, "time")),
+        "state": _state_from_log_type(log_type),
     }
 
 
@@ -183,4 +236,3 @@ def _error(code, message):
             "message": message,
         },
     }
-

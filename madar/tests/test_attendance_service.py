@@ -16,9 +16,34 @@ class AttendanceServiceTest(unittest.TestCase):
 
         self.assertEqual(result["ok"], True)
         self.assertEqual(result["data"]["state"], "unknown")
+        self.assertEqual(result["data"]["current_state"], "unknown")
+        self.assertIsNone(result["data"]["last_log_type"])
+        self.assertIsNone(result["data"]["last_time"])
         self.assertIsNone(result["data"]["last_checkin"])
         self.assertEqual(result["data"]["employee"]["name"], "EMP-0001")
         self.assertNotIn("bank_ac_no", result["data"]["employee"])
+
+    def test_get_status_exposes_session_ux_fields(self):
+        last_time = datetime(2026, 5, 19, 8, 30, 0)
+        fake_frappe = FakeFrappe(
+            checkins=[
+                {
+                    "name": "CHK-1",
+                    "employee": "EMP-0001",
+                    "time": last_time,
+                    "log_type": "IN",
+                }
+            ]
+        )
+
+        result = attendance_service.get_status(
+            "employee.test@example.com",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["data"]["current_state"], "in_work")
+        self.assertEqual(result["data"]["last_log_type"], "IN")
+        self.assertEqual(result["data"]["last_time"], str(last_time))
 
     def test_check_in_creates_employee_checkin_with_server_time_and_internal_log_type(self):
         server_time = datetime(2026, 5, 19, 8, 30, 0)
@@ -49,6 +74,50 @@ class AttendanceServiceTest(unittest.TestCase):
         self.assertEqual(result["ok"], True)
         self.assertEqual(result["data"]["state"], "out_of_work")
         self.assertEqual(fake_frappe.created_checkins[0]["log_type"], "OUT")
+
+    def test_check_in_is_blocked_when_current_state_is_in_work(self):
+        fake_frappe = FakeFrappe(
+            now=datetime(2026, 5, 19, 8, 40, 0),
+            checkins=[
+                {
+                    "name": "CHK-1",
+                    "employee": "EMP-0001",
+                    "time": datetime(2026, 5, 19, 8, 30, 0),
+                    "log_type": "IN",
+                }
+            ],
+        )
+
+        result = attendance_service.check_in(
+            "employee.test@example.com",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "ALREADY_CHECKED_IN")
+        self.assertEqual(fake_frappe.created_checkins, [])
+
+    def test_check_out_is_blocked_when_current_state_is_out_of_work(self):
+        fake_frappe = FakeFrappe(
+            now=datetime(2026, 5, 19, 17, 40, 0),
+            checkins=[
+                {
+                    "name": "CHK-1",
+                    "employee": "EMP-0001",
+                    "time": datetime(2026, 5, 19, 17, 0, 0),
+                    "log_type": "OUT",
+                }
+            ],
+        )
+
+        result = attendance_service.check_out(
+            "employee.test@example.com",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "ALREADY_CHECKED_OUT")
+        self.assertEqual(fake_frappe.created_checkins, [])
 
     def test_check_in_requires_attendance_permission(self):
         fake_frappe = FakeFrappe(roles=["Madar Accountant"])
@@ -107,6 +176,51 @@ class AttendanceServiceTest(unittest.TestCase):
         self.assertEqual(result["ok"], False)
         self.assertEqual(result["error"]["code"], "DUPLICATE_CHECKIN")
         self.assertEqual(fake_frappe.created_checkins, [])
+
+    def test_get_history_returns_safe_newest_first_limited_items(self):
+        fake_frappe = FakeFrappe(
+            checkins=[
+                {
+                    "name": "CHK-1",
+                    "employee": "EMP-0001",
+                    "time": datetime(2026, 5, 19, 8, 0, 0),
+                    "log_type": "IN",
+                    "device_id": "hidden",
+                },
+                {
+                    "name": "CHK-2",
+                    "employee": "EMP-0001",
+                    "time": datetime(2026, 5, 19, 17, 0, 0),
+                    "log_type": "OUT",
+                    "device_id": "hidden",
+                },
+            ]
+        )
+
+        result = attendance_service.get_history(
+            "employee.test@example.com",
+            frappe_module=fake_frappe,
+            limit=10,
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(
+            result["data"],
+            {
+                "items": [
+                    {
+                        "log_type": "OUT",
+                        "time": "2026-05-19 17:00:00",
+                        "state": "out_of_work",
+                    },
+                    {
+                        "log_type": "IN",
+                        "time": "2026-05-19 08:00:00",
+                        "state": "in_work",
+                    },
+                ]
+            },
+        )
 
 
 class FakeMeta:

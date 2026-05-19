@@ -28,6 +28,27 @@ void main() {
     expect(status.lastLogType, 'IN');
   });
 
+  test('parses attendance history safe envelope newest first', () {
+    final history = AttendanceHistory.fromEnvelope({
+      'ok': true,
+      'data': {
+        'items': [
+          {
+            'log_type': 'OUT',
+            'time': '2026-05-19 17:00:00',
+            'state': 'out_of_work',
+          },
+          {'log_type': 'IN', 'time': '2026-05-19 08:00:00', 'state': 'in_work'},
+        ],
+      },
+      'error': null,
+    });
+
+    expect(history.items, hasLength(2));
+    expect(history.items.first.logType, 'OUT');
+    expect(history.items.first.state, AttendanceState.outOfWork);
+  });
+
   test('checkIn posts no employee time or log_type fields', () async {
     final requests = <http.Request>[];
     final client = FrappeApiClient(
@@ -88,6 +109,43 @@ void main() {
       '/api/method/madar.api.attendance.get_status',
     );
     expect(status.state, AttendanceState.unknown);
+  });
+
+  test('getAttendanceHistory calls Madar history endpoint', () async {
+    final requests = <http.Request>[];
+    final client = FrappeApiClient(
+      baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+      sessionStore: MemorySessionStore(sid: 'abc123'),
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(
+          jsonEncode({
+            'message': {
+              'ok': true,
+              'data': {
+                'items': [
+                  {
+                    'log_type': 'IN',
+                    'time': '2026-05-19 08:00:00',
+                    'state': 'in_work',
+                  },
+                ],
+              },
+              'error': null,
+            },
+          }),
+          200,
+        );
+      }),
+    );
+
+    final history = await client.getAttendanceHistory();
+
+    expect(
+      requests.single.url.path,
+      '/api/method/madar.api.attendance.get_history',
+    );
+    expect(history.items.single.logType, 'IN');
   });
 }
 

@@ -44,6 +44,51 @@ class AttendanceStatus {
   final String? lastLogType;
 }
 
+class AttendanceHistory {
+  const AttendanceHistory({required this.items});
+
+  factory AttendanceHistory.fromEnvelope(Map<String, dynamic> envelope) {
+    final data = _asMap(envelope['data']);
+    final rawItems = data['items'];
+    final items = rawItems is Iterable
+        ? rawItems
+              .map((item) => AttendanceHistoryItem.fromJson(_asMap(item)))
+              .toList()
+        : <AttendanceHistoryItem>[];
+    return AttendanceHistory(items: items);
+  }
+
+  final List<AttendanceHistoryItem> items;
+}
+
+class AttendanceHistoryItem {
+  const AttendanceHistoryItem({
+    required this.logType,
+    required this.time,
+    required this.state,
+  });
+
+  factory AttendanceHistoryItem.fromJson(Map<String, dynamic> json) {
+    return AttendanceHistoryItem(
+      logType: _nullableString(json['log_type']) ?? '',
+      time: _nullableString(json['time']) ?? '',
+      state: _stateFromCode(_nullableString(json['state'])),
+    );
+  }
+
+  final String logType;
+  final String time;
+  final AttendanceState state;
+
+  String get arabicLogType {
+    return switch (logType) {
+      'IN' => 'حضور',
+      'OUT' => 'انصراف',
+      _ => 'غير معروف',
+    };
+  }
+}
+
 AttendanceState _stateFromCode(String? state) {
   return switch (state) {
     'in_work' => AttendanceState.inWork,

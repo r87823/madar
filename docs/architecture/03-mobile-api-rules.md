@@ -76,6 +76,8 @@ Attendance endpoints also use:
 - `EMPLOYEE_NOT_LINKED`.
 - `EMPLOYEE_CHECKIN_UNAVAILABLE`.
 - `DUPLICATE_CHECKIN`.
+- `ALREADY_CHECKED_IN`.
+- `ALREADY_CHECKED_OUT`.
 
 ## Long-Running Work
 

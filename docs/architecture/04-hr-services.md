@@ -88,6 +88,7 @@ Development user passwords must come from protected deployment configuration or 
 Madar exposes mobile attendance APIs as a thin, permission-checked layer over Frappe HR Employee Checkin:
 
 - `/api/method/madar.api.attendance.get_status`.
+- `/api/method/madar.api.attendance.get_history`.
 - `/api/method/madar.api.attendance.check_in`.
 - `/api/method/madar.api.attendance.check_out`.
 
@@ -99,6 +100,10 @@ All attendance APIs require authentication. Mutating attendance APIs require Mad
 The backend derives the Employee from the authenticated Frappe session user. Flutter must not send `employee`, `time`, or `log_type`. Madar uses server time only and sets `log_type` internally based on the endpoint: `IN` for check-in and `OUT` for check-out.
 
 If the current user is not linked to an Employee, or if the Employee Checkin DocType is unavailable, the API returns a safe stable error response. The MVP writes only Employee Checkin records and does not write Attendance, payroll, salary, leave, auto-attendance, or approval data.
+
+Attendance status returns only safe session state fields for the current user, including `current_state`, `last_log_type`, and `last_time`. Attendance history is read-only, newest first, limited to a small number of the current user's own Employee Checkin records, and exposes only safe fields: `log_type`, `time`, and derived `state`.
+
+Session UX blocks invalid repeated actions. If the latest checkin means the employee is already in work, another check-in returns `ALREADY_CHECKED_IN`. If the latest checkin means the employee is already out of work, another check-out returns `ALREADY_CHECKED_OUT`. Short-window duplicate protection still returns `DUPLICATE_CHECKIN`.
 
 ## Rules
 

@@ -10,6 +10,12 @@ def get_status():
 
 
 @frappe.whitelist()
+def get_history():
+    user = _authenticated_user()
+    return attendance_service.get_history(user)
+
+
+@frappe.whitelist()
 def check_in():
     user = _authenticated_user()
     return attendance_service.check_in(user)
@@ -26,4 +32,3 @@ def _authenticated_user():
     if user == "Guest":
         frappe.throw("Authentication required", frappe.AuthenticationError)
     return user
-

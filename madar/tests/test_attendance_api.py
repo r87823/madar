@@ -21,7 +21,7 @@ class AttendanceApiTest(unittest.TestCase):
 
         attendance = importlib.import_module("madar.api.attendance")
 
-        self.assertEqual(len(whitelist_calls), 3)
+        self.assertEqual(len(whitelist_calls), 4)
         self.assertTrue(all(call == {"args": (), "kwargs": {}} for call in whitelist_calls))
         self.assertEqual(inspect.signature(attendance.check_in).parameters, {})
         self.assertEqual(inspect.signature(attendance.check_out).parameters, {})
@@ -54,11 +54,13 @@ class AttendanceApiTest(unittest.TestCase):
         calls = []
         attendance.attendance_service = types.SimpleNamespace(
             get_status=lambda user: calls.append(("status", user)) or {"ok": True},
+            get_history=lambda user: calls.append(("history", user)) or {"ok": True},
             check_in=lambda user: calls.append(("in", user)) or {"ok": True},
             check_out=lambda user: calls.append(("out", user)) or {"ok": True},
         )
 
         attendance.get_status()
+        attendance.get_history()
         attendance.check_in()
         attendance.check_out()
 
@@ -66,6 +68,7 @@ class AttendanceApiTest(unittest.TestCase):
             calls,
             [
                 ("status", "employee.test@example.com"),
+                ("history", "employee.test@example.com"),
                 ("in", "employee.test@example.com"),
                 ("out", "employee.test@example.com"),
             ],
@@ -74,4 +77,3 @@ class AttendanceApiTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
