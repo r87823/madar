@@ -14,6 +14,8 @@
     "order_status",
     "created_by_user",
     "notes",
+    "subtotal",
+    "items_count",
     "submitted_at",
     "cancelled_at"
   ],
@@ -69,6 +71,21 @@
       "fieldname": "notes",
       "fieldtype": "Small Text",
       "label": "Notes"
+    },
+    {
+      "default": "0",
+      "fieldname": "subtotal",
+      "fieldtype": "Currency",
+      "in_list_view": 1,
+      "label": "Subtotal",
+      "read_only": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "items_count",
+      "fieldtype": "Int",
+      "label": "Items Count",
+      "read_only": 1
     },
     {
       "fieldname": "submitted_at",

@@ -83,6 +83,10 @@ Order draft endpoints also use:
 
 - `ORDER_NOT_FOUND`.
 - `INVALID_ORDER_TRANSITION`.
+- `ORDER_NOT_EDITABLE`.
+- `ORDER_ITEM_NOT_FOUND`.
+- `PRODUCT_NOT_FOUND`.
+- `INVALID_QUANTITY`.
 
 ## Order Draft Endpoints
 
@@ -97,6 +101,29 @@ R3-T01 exposes Madar operational order draft endpoints only:
 ```
 
 These endpoints are authenticated, return the shared `ok/data/error` envelope, and must not call ERPNext Sales Order APIs or `/api/resource` endpoints. Flutter sends only customer display fields and notes; Madar derives actor, branch, scopes, and status server-side.
+
+## Catalog and Order Item Endpoints
+
+R3-T02 exposes catalog and item APIs through Madar only:
+
+```text
+/api/method/madar.api.catalog.list_products
+/api/method/madar.api.order_items.list_order_items
+/api/method/madar.api.order_items.add_item
+/api/method/madar.api.order_items.update_item_qty
+/api/method/madar.api.order_items.remove_item
+```
+
+Flutter must not call ERPNext `Item`, `Item Price`, stock, warehouse, accounting, or Sales Order endpoints directly. Catalog responses expose only:
+
+- `item_code`.
+- `item_name`.
+- `stock_uom`.
+- `disabled`.
+- `image`.
+- `default_price`.
+
+Order item mutation APIs derive unit price, line total, subtotal, item count, actor, and scope server-side. Flutter sends only order, item, quantity, and optional notes.
 
 ## Long-Running Work
 

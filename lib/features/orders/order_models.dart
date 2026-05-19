@@ -41,6 +41,8 @@ class MadarOrder {
     this.assignedBranch,
     this.createdByUser,
     this.notes,
+    this.subtotal = 0,
+    this.itemsCount = 0,
     this.submittedAt,
     this.cancelledAt,
   });
@@ -53,6 +55,8 @@ class MadarOrder {
   final String? assignedBranch;
   final String? createdByUser;
   final String? notes;
+  final double subtotal;
+  final int itemsCount;
   final String? submittedAt;
   final String? cancelledAt;
 
@@ -66,6 +70,8 @@ class MadarOrder {
       assignedBranch: map['assigned_branch']?.toString(),
       createdByUser: map['created_by_user']?.toString(),
       notes: map['notes']?.toString(),
+      subtotal: _toDouble(map['subtotal']),
+      itemsCount: _toInt(map['items_count']),
       submittedAt: map['submitted_at']?.toString(),
       cancelledAt: map['cancelled_at']?.toString(),
     );
@@ -78,6 +84,16 @@ class MadarOrder {
         : <String, dynamic>{};
     return MadarOrder.fromMap(map);
   }
+}
+
+double _toDouble(Object? value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int _toInt(Object? value) {
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
 }
 
 class OrderList {

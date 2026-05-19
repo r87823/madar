@@ -120,6 +120,14 @@ R3-T01 introduces `Madar Order` as a Madar-owned operational document. Order API
 
 Endpoint code must not check raw Frappe roles for order actions. The API layer delegates to `madar.services.order_service`, which performs permission and scope decisions before reads or mutations.
 
+R3-T02 order item APIs reuse the same order permissions and scopes:
+
+- `orders.create` allows browsing the safe catalog bridge and mutating line items on editable orders.
+- Only scoped orders may be read or mutated.
+- Item mutations are allowed only while the order is `draft` or `returned_for_edit`.
+- `submitted` and `cancelled` orders reject item mutations.
+- Totals are recalculated in `madar.services.order_item_service`, not in Flutter or API wrappers.
+
 ## Sensitive Mutations
 
 Any future sensitive mutation must create an audit log. Examples include payment changes, cashbox actions, delivery status changes, production status changes, approval decisions, and employee self-service mutations.

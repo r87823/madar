@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import '../auth/session_store.dart';
 import '../auth/user_context.dart';
 import '../../features/attendance/attendance_status.dart';
+import '../../features/orders/items/order_item_models.dart';
+import '../../features/orders/items/product_models.dart';
 import '../../features/orders/order_models.dart';
 import 'http_client_factory.dart';
 
@@ -145,6 +147,79 @@ class FrappeApiClient {
     return MadarOrder.fromEnvelope(_safeEnvelope(response));
   }
 
+  Future<ProductList> listProducts({String search = ''}) async {
+    final response = await _httpClient.get(
+      baseUri.replace(
+        path: '/api/method/madar.api.catalog.list_products',
+        queryParameters: search.isEmpty ? null : {'search': search},
+      ),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل المنتجات');
+    return ProductList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<OrderItemList> listOrderItems(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.order_items.list_order_items'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل أصناف الطلب');
+    return OrderItemList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<OrderItemList> addOrderItem({
+    required String orderName,
+    required String itemCode,
+    required double qty,
+    String notes = '',
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.order_items.add_item'),
+      headers: _headers(),
+      body: {
+        'order_name': orderName,
+        'item_code': itemCode,
+        'qty': qty.toString(),
+        'notes': notes,
+      },
+    );
+    _throwIfFailed(response, fallback: 'تعذر إضافة الصنف');
+    return OrderItemList.fromEnvelope(_normalizeItemMutationEnvelope(response));
+  }
+
+  Future<OrderItemList> updateOrderItemQty({
+    required String orderName,
+    required String itemName,
+    required double qty,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.order_items.update_item_qty'),
+      headers: _headers(),
+      body: {
+        'order_name': orderName,
+        'item_name': itemName,
+        'qty': qty.toString(),
+      },
+    );
+    _throwIfFailed(response, fallback: 'تعذر تعديل الكمية');
+    return OrderItemList.fromEnvelope(_normalizeItemMutationEnvelope(response));
+  }
+
+  Future<OrderItemList> removeOrderItem({
+    required String orderName,
+    required String itemName,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.order_items.remove_item'),
+      headers: _headers(),
+      body: {'order_name': orderName, 'item_name': itemName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر حذف الصنف');
+    return OrderItemList.fromEnvelope(_safeEnvelope(response));
+  }
+
   Uri _methodUri(String method) {
     return baseUri.replace(path: '/api/method/$method', query: '');
   }
@@ -206,6 +281,21 @@ class FrappeApiClient {
       final error = map['error'];
       final message = error is Map ? error['message'] : null;
       throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
+    }
+    return map;
+  }
+
+  Map<String, dynamic> _normalizeItemMutationEnvelope(http.Response response) {
+    final map = _safeEnvelope(response);
+    final data = map['data'];
+    if (data is Map && data['item'] != null && data['items'] == null) {
+      return {
+        ...map,
+        'data': {
+          ...data.map((key, value) => MapEntry('$key', value)),
+          'items': [data['item']],
+        },
+      };
     }
     return map;
   }

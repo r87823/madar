@@ -15,6 +15,8 @@ ORDER_FIELDS = [
     "order_status",
     "created_by_user",
     "notes",
+    "subtotal",
+    "items_count",
     "submitted_at",
     "cancelled_at",
     "creation",
@@ -46,6 +48,8 @@ def create_draft(user, customer_name, customer_phone="", notes="", frappe_module
             "assigned_branch": branch,
             "order_status": "draft",
             "created_by_user": user,
+            "subtotal": 0,
+            "items_count": 0,
         }
     ).insert(ignore_permissions=True)
     _audit(doc, "create_draft", user, now)
@@ -191,6 +195,8 @@ def _serialize_order(order):
         "order_status": _get_value(order, "order_status"),
         "created_by_user": _get_value(order, "created_by_user"),
         "notes": _get_value(order, "notes"),
+        "subtotal": _float(_get_value(order, "subtotal")),
+        "items_count": int(_float(_get_value(order, "items_count"))),
         "submitted_at": _string_or_none(_get_value(order, "submitted_at")),
         "cancelled_at": _string_or_none(_get_value(order, "cancelled_at")),
         "creation": _string_or_none(_get_value(order, "creation")),
@@ -208,6 +214,13 @@ def _get_value(source, field):
 
 def _string_or_none(value):
     return str(value) if value else None
+
+
+def _float(value):
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _ok(data):

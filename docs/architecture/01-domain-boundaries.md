@@ -23,6 +23,10 @@ Madar may reference ERPNext and HRMS records, but it should not silently replace
 
 `Madar Order` is not an ERPNext Sales Order. Creating, submitting, or cancelling a Madar order must not create stock, accounting, invoice, delivery, payment, or ERPNext Sales Order records. ERPNext integration comes in a later task through explicit server-side services.
 
+R3-T02 adds `Madar Order Item` records and order totals for operational draft capture only. Adding, editing, or removing these line items must not reserve stock, validate warehouse availability, create invoices, create payments, apply taxes, or create ERPNext Sales Orders.
+
+Madar may expose a safe product catalog bridge over ERPNext `Item`, but Flutter must never call ERPNext Item APIs directly. The bridge returns only mobile-safe display fields and an optional safe default price.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:
