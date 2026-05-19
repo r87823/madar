@@ -137,6 +137,16 @@ Approved orders may include ERP sync metadata such as `erp_sync_status`, `erp_sy
 
 R3-T05 keeps ERP sync internal/admin-only. Mobile clients must not receive a sync button or call ERPNext APIs directly. When an approved order is synced server-side, Flutter may display `تمت المزامنة`; when sync fails, Flutter may display `فشل في المزامنة` from safe Madar metadata only.
 
+R3-T06 adds authenticated Madar-only ERP sync review endpoints:
+
+```text
+/api/method/madar.api.erp_sync.list_sync_orders
+/api/method/madar.api.erp_sync.get_sync_order
+/api/method/madar.api.erp_sync.retry_sync_order
+```
+
+They require `accounting.view_sync_logs` and expose only safe sync fields: order name, customer name, subtotal, order status, ERP sync status, safe ERP sync error, ERP Sales Order reference, approved timestamp, and approver. Retry is allowed only for pending or failed sync rows; synced rows return `ORDER_ALREADY_SYNCED`.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

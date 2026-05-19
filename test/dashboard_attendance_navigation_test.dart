@@ -26,6 +26,7 @@ void main() {
             },
             onOpenOrders: () {},
             onOpenApprovalQueue: () {},
+            onOpenErpSyncReview: () {},
           ),
         ),
       ),

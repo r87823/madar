@@ -1,7 +1,78 @@
+from madar.permissions.checks import has_permission
 from madar.services import order_service
 
 
 ITEM_FIELDS = ["item_code", "qty", "unit_price"]
+SYNC_PERMISSION = "accounting.view_sync_logs"
+SYNC_ORDER_FIELDS = [
+    "name",
+    "customer_name",
+    "subtotal",
+    "order_status",
+    "erp_sync_status",
+    "erp_sync_error",
+    "erp_sales_order",
+    "approved_at",
+    "approved_by",
+]
+MAX_SYNC_LIST_LIMIT = 50
+
+
+def list_sync_orders(user, frappe_module=None, limit=MAX_SYNC_LIST_LIMIT):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    allowed, error = _can_view_sync(user, frappe_module)
+    if not allowed:
+        return error
+
+    rows = frappe_module.get_all(
+        "Madar Order",
+        filters={"order_status": "approved"},
+        fields=SYNC_ORDER_FIELDS,
+        order_by="modified desc",
+        limit=max(1, min(int(limit or MAX_SYNC_LIST_LIMIT), MAX_SYNC_LIST_LIMIT)),
+    )
+    return _ok({"items": [_serialize_sync_order(row) for row in rows]})
+
+
+def get_sync_order(user, order_name, frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    allowed, error = _can_view_sync(user, frappe_module)
+    if not allowed:
+        return error
+
+    order, lookup_error = _get_order(order_name, frappe_module)
+    if lookup_error:
+        return lookup_error
+    return _ok(_serialize_sync_order(order))
+
+
+def retry_sync_order(user, order_name, frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    allowed, error = _can_view_sync(user, frappe_module)
+    if not allowed:
+        return error
+
+    order, lookup_error = _get_order(order_name, frappe_module)
+    if lookup_error:
+        return lookup_error
+    if order_service._get_value(order, "erp_sync_status") == "synced":
+        return _error("ORDER_ALREADY_SYNCED", "تمت مزامنة الطلب مسبقًا.")
+    if order_service._get_value(order, "erp_sync_status") not in {"pending", "failed", None, ""}:
+        return _error("INVALID_ORDER_STATE", "حالة المزامنة غير قابلة للإعادة.")
+
+    result = sync_order_to_erp(order_name, frappe_module=frappe_module)
+    if not result["ok"]:
+        return result
+    updated_order, updated_error = _get_order(order_name, frappe_module)
+    if updated_error:
+        return updated_error
+    return _ok(_serialize_sync_order(updated_order))
 
 
 def sync_order_to_erp(order_name, frappe_module=None):
@@ -178,6 +249,27 @@ def _get_items(order_name, frappe_module):
         )
     except Exception:
         return []
+
+
+def _can_view_sync(user, frappe_module):
+    roles = frappe_module.get_roles(user)
+    if has_permission(roles, SYNC_PERMISSION):
+        return True, None
+    return False, _error("PERMISSION_DENIED", "ليست لديك صلاحية مراجعة مزامنة ERP.")
+
+
+def _serialize_sync_order(order):
+    return {
+        "name": order_service._get_value(order, "name"),
+        "customer_name": order_service._get_value(order, "customer_name"),
+        "subtotal": _float(order_service._get_value(order, "subtotal")),
+        "order_status": order_service._get_value(order, "order_status"),
+        "erp_sync_status": order_service._get_value(order, "erp_sync_status"),
+        "erp_sync_error": order_service._get_value(order, "erp_sync_error"),
+        "erp_sales_order": order_service._get_value(order, "erp_sales_order"),
+        "approved_at": order_service._string_or_none(order_service._get_value(order, "approved_at")),
+        "approved_by": order_service._get_value(order, "approved_by"),
+    }
 
 
 def _audit(order, action):

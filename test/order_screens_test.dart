@@ -36,6 +36,7 @@ void main() {
               opened = true;
             },
             onOpenApprovalQueue: () {},
+            onOpenErpSyncReview: () {},
           ),
         ),
       ),

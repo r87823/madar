@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/session_store.dart';
 import '../auth/user_context.dart';
+import '../../features/accounting/erp_sync_models.dart';
 import '../../features/attendance/attendance_status.dart';
 import '../../features/orders/items/order_item_models.dart';
 import '../../features/orders/items/product_models.dart';
@@ -190,6 +191,35 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر رفض الطلب');
     return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ErpSyncOrderList> listErpSyncOrders() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.erp_sync.list_sync_orders'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل سجل المزامنة');
+    return ErpSyncOrderList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ErpSyncOrder> getErpSyncOrder(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.erp_sync.get_sync_order'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل تفاصيل المزامنة');
+    return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ErpSyncOrder> retryErpSyncOrder(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.erp_sync.retry_sync_order'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إعادة محاولة المزامنة');
+    return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<ProductList> listProducts({String search = ''}) async {

@@ -4,6 +4,7 @@ import '../core/api/frappe_api_client.dart';
 import '../core/auth/auth_controller.dart';
 import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
+import '../features/accounting/erp_sync_review_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/orders/approval_queue_screen.dart';
 import '../features/orders/order_list_screen.dart';
@@ -89,6 +90,13 @@ class _MadarAppState extends State<MadarApp> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ApprovalQueueScreen(apiClient: _apiClient),
+                ),
+              );
+            },
+            onOpenErpSyncReview: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ErpSyncReviewScreen(apiClient: _apiClient),
                 ),
               );
             },

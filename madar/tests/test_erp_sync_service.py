@@ -7,6 +7,104 @@ from madar.tests.test_order_service import _order
 
 
 class ErpSyncServiceTest(unittest.TestCase):
+    def test_sync_review_requires_accounting_permission(self):
+        fake_frappe = FakeFrappe(roles=["Madar Employee"])
+
+        result = erp_sync_service.list_sync_orders(
+            user="employee.test@example.com", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "PERMISSION_DENIED")
+
+    def test_list_sync_orders_returns_safe_fields_for_accountant(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Employee", "Madar Accountant"],
+            orders=[
+                _sync_order("MADAR-ORD-1", status="approved", items_count=1, erp_sync_status="failed"),
+                _sync_order(
+                    "MADAR-ORD-2",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-1",
+                ),
+                _sync_order("MADAR-ORD-3", status="draft", items_count=1),
+            ],
+        )
+
+        result = erp_sync_service.list_sync_orders(
+            user="accountant.test@example.com", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual([item["name"] for item in result["data"]["items"]], ["MADAR-ORD-2", "MADAR-ORD-1"])
+        self.assertEqual(
+            set(result["data"]["items"][0]),
+            {
+                "name",
+                "customer_name",
+                "subtotal",
+                "order_status",
+                "erp_sync_status",
+                "erp_sync_error",
+                "erp_sales_order",
+                "approved_at",
+                "approved_by",
+            },
+        )
+        self.assertNotIn("password", result["data"]["items"][0])
+
+    def test_get_sync_order_returns_safe_detail(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Accountant"],
+            orders=[_sync_order("MADAR-ORD-1", status="approved", items_count=1)],
+        )
+
+        result = erp_sync_service.get_sync_order(
+            user="accountant.test@example.com",
+            order_name="MADAR-ORD-1",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["name"], "MADAR-ORD-1")
+        self.assertEqual(set(result["data"]), set(erp_sync_service.SYNC_ORDER_FIELDS))
+
+    def test_retry_sync_order_allows_pending_or_failed_and_rejects_synced(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Accountant"],
+            orders=[
+                _sync_order("MADAR-ORD-1", status="approved", items_count=1, erp_sync_status="failed"),
+                _sync_order(
+                    "MADAR-ORD-2",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-OLD",
+                ),
+            ],
+            items=[_item("LINE-1", "MADAR-ORD-1"), _item("LINE-2", "MADAR-ORD-2")],
+        )
+
+        retried = erp_sync_service.retry_sync_order(
+            user="accountant.test@example.com",
+            order_name="MADAR-ORD-1",
+            frappe_module=fake_frappe,
+        )
+        synced = erp_sync_service.retry_sync_order(
+            user="accountant.test@example.com",
+            order_name="MADAR-ORD-2",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(retried["ok"], True)
+        self.assertEqual(retried["data"]["erp_sync_status"], "synced")
+        self.assertEqual(set(retried["data"]), set(erp_sync_service.SYNC_ORDER_FIELDS))
+        self.assertNotIn("created_by_user", retried["data"])
+        self.assertEqual(synced["ok"], False)
+        self.assertEqual(synced["error"]["code"], "ORDER_ALREADY_SYNCED")
+
     def test_validate_requires_approved_order_with_items_and_not_synced(self):
         not_approved = FakeFrappe(
             orders=[_sync_order("MADAR-ORD-1", status="submitted", items_count=1)]
@@ -249,15 +347,27 @@ class FakeOrderDoc:
 
 
 class FakeFrappe:
-    def __init__(self, *, orders=None, items=None, today="2026-05-19", insert_error=None):
+    def __init__(
+        self,
+        *,
+        orders=None,
+        items=None,
+        today="2026-05-19",
+        insert_error=None,
+        roles=None,
+    ):
         self.orders = list(orders or [])
         self.items = list(items or [])
+        self.roles = roles or ["Madar Accountant"]
         self.created_sales_orders = []
         self.today = today
         self.insert_error = insert_error
         self.audit_events = []
         self.db = types.SimpleNamespace(commit=lambda: None)
         self.utils = types.SimpleNamespace(nowdate=lambda: self.today)
+
+    def get_roles(self, user):
+        return list(self.roles)
 
     def get_doc(self, doctype_or_values, name=None):
         if isinstance(doctype_or_values, dict):
@@ -271,12 +381,20 @@ class FakeFrappe:
         raise KeyError(name)
 
     def get_all(self, doctype, filters=None, fields=None, order_by=None, limit=20):
-        if doctype != "Madar Order Item":
+        if doctype == "Madar Order":
+            rows = list(self.orders)
+        elif doctype == "Madar Order Item":
+            rows = list(self.items)
+        else:
             return []
-        rows = list(self.items)
         if filters:
             for key, value in filters.items():
-                rows = [row for row in rows if row.get(key) == value]
+                if isinstance(value, list) and value[0] == "in":
+                    rows = [row for row in rows if row.get(key) in value[1]]
+                else:
+                    rows = [row for row in rows if row.get(key) == value]
+        if order_by:
+            rows.sort(key=lambda row: row.get("modified") or row.get("name"), reverse="desc" in order_by)
         return [types.SimpleNamespace(**{field: row.get(field) for field in fields}) for row in rows[:limit]]
 
 

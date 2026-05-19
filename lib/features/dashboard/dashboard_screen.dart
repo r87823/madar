@@ -11,6 +11,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenAttendance,
     required this.onOpenOrders,
     required this.onOpenApprovalQueue,
+    required this.onOpenErpSyncReview,
     super.key,
   });
 
@@ -19,6 +20,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenAttendance;
   final VoidCallback onOpenOrders;
   final VoidCallback onOpenApprovalQueue;
+  final VoidCallback onOpenErpSyncReview;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -99,6 +101,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenAttendance: onOpenAttendance,
                     onOpenOrders: onOpenOrders,
                     onOpenApprovalQueue: onOpenApprovalQueue,
+                    onOpenErpSyncReview: onOpenErpSyncReview,
                   );
                 },
               );
@@ -179,12 +182,14 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenAttendance,
     required this.onOpenOrders,
     required this.onOpenApprovalQueue,
+    required this.onOpenErpSyncReview,
   });
 
   final DashboardCardDefinition card;
   final VoidCallback onOpenAttendance;
   final VoidCallback onOpenOrders;
   final VoidCallback onOpenApprovalQueue;
+  final VoidCallback onOpenErpSyncReview;
 
   @override
   Widget build(BuildContext context) {
@@ -204,6 +209,10 @@ class _DashboardCard extends StatelessWidget {
           }
           if (card.title == 'اعتماد الطلبات') {
             onOpenApprovalQueue();
+            return;
+          }
+          if (card.title == 'المحاسبة والمزامنة') {
+            onOpenErpSyncReview();
             return;
           }
           ScaffoldMessenger.of(

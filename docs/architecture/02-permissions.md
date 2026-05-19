@@ -138,6 +138,7 @@ R3-T03 approval APIs use:
 - Approved orders are operationally frozen and receive ERP sync metadata for the future server-side sync boundary.
 - ERP sync boundary helpers must remain internal service methods until a later task defines protected APIs, jobs, and permissions.
 - R3-T05 ERP sync is manual/internal only and has no mobile endpoint. A later task must define explicit admin permissions before exposing sync actions through any API.
+- R3-T06 exposes ERP sync review and retry through Madar APIs for accounting/admin users. These APIs require `accounting.view_sync_logs`; endpoint code delegates to `madar.services.erp_sync_service` and must not check raw roles directly.
 
 ## Sensitive Mutations
 
