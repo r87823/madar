@@ -85,6 +85,18 @@ class MadarOrder {
   final String? erpSyncError;
   final String? erpSalesOrder;
 
+  String get displayStatusLabel {
+    if (status == OrderStatus.approved) {
+      if (erpSyncStatus == 'synced' || erpSalesOrder?.isNotEmpty == true) {
+        return 'تمت المزامنة';
+      }
+      if (erpSyncStatus == 'failed') {
+        return 'فشل في المزامنة';
+      }
+    }
+    return status.arabicLabel;
+  }
+
   factory MadarOrder.fromMap(Map<String, dynamic> map) {
     return MadarOrder(
       name: map['name']?.toString() ?? '',

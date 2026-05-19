@@ -144,7 +144,7 @@ class _OrderCard extends StatelessWidget {
             if (order.assignedBranch?.isNotEmpty == true) order.assignedBranch!,
           ].join(' - '),
         ),
-        trailing: Chip(label: Text(order.status.arabicLabel)),
+        trailing: Chip(label: Text(order.displayStatusLabel)),
       ),
     );
   }

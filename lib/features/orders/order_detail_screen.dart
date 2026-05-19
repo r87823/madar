@@ -54,7 +54,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 children: [
                   _Row(label: 'العميل', value: _order.customerName),
                   _Row(label: 'الجوال', value: _order.customerPhone),
-                  _Row(label: 'الحالة', value: _order.status.arabicLabel),
+                  _Row(label: 'الحالة', value: _order.displayStatusLabel),
                   if (_order.status == OrderStatus.approved)
                     _Row(label: 'مزامنة ERP', value: _erpSyncLabel),
                   _Row(
@@ -146,7 +146,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       return 'تمت المزامنة';
     }
     if (_order.erpSyncStatus == 'failed') {
-      return 'فشلت المزامنة';
+      return 'فشل في المزامنة';
     }
     return 'جاهز للمزامنة';
   }

@@ -21,6 +21,27 @@ void main() {
     expect(OrderStatus.fromString('rejected').arabicLabel, 'مرفوض');
   });
 
+  test('order display label reflects ERP sync metadata', () {
+    const synced = MadarOrder(
+      name: 'MADAR-ORD-1',
+      customerName: 'عميل',
+      customerPhone: '0500000000',
+      status: OrderStatus.approved,
+      erpSyncStatus: 'synced',
+      erpSalesOrder: 'SAL-ORD-1',
+    );
+    const failed = MadarOrder(
+      name: 'MADAR-ORD-2',
+      customerName: 'عميل',
+      customerPhone: '0500000000',
+      status: OrderStatus.approved,
+      erpSyncStatus: 'failed',
+    );
+
+    expect(synced.displayStatusLabel, 'تمت المزامنة');
+    expect(failed.displayStatusLabel, 'فشل في المزامنة');
+  });
+
   test('approval methods call only Madar endpoints', () async {
     final requests = <http.Request>[];
     final client = FrappeApiClient(

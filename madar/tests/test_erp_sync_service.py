@@ -91,6 +91,100 @@ class ErpSyncServiceTest(unittest.TestCase):
         self.assertEqual(success["data"]["erp_sales_order"], "SAL-ORD-2026-00001")
         self.assertEqual(fake_frappe.created_sales_orders, [])
 
+    def test_map_madar_order_to_sales_order_uses_safe_draft_fields(self):
+        payload = {
+            "customer": "Customer MADAR-ORD-1",
+            "items": [{"item_code": "MILK-001", "qty": 2, "rate": 12.5}],
+            "notes": "Mobile order",
+            "madar_order": "MADAR-ORD-1",
+        }
+        fake_frappe = FakeFrappe(today="2026-05-19")
+
+        mapped = erp_sync_service.map_madar_order_to_sales_order(
+            payload, frappe_module=fake_frappe
+        )
+
+        self.assertEqual(mapped["doctype"], "Sales Order")
+        self.assertEqual(mapped["customer"], "Customer MADAR-ORD-1")
+        self.assertEqual(mapped["transaction_date"], "2026-05-19")
+        self.assertEqual(mapped["delivery_date"], "2026-05-19")
+        self.assertEqual(
+            mapped["items"],
+            [{"item_code": "MILK-001", "qty": 2, "rate": 12.5, "delivery_date": "2026-05-19"}],
+        )
+        self.assertEqual(mapped["remarks"], "Mobile order\nMadar Order: MADAR-ORD-1")
+
+    def test_create_sales_order_inserts_draft_sales_order(self):
+        fake_frappe = FakeFrappe(today="2026-05-19")
+        payload = {
+            "customer": "Customer MADAR-ORD-1",
+            "items": [{"item_code": "MILK-001", "qty": 1, "rate": 12.5}],
+            "notes": "",
+            "madar_order": "MADAR-ORD-1",
+        }
+
+        result = erp_sync_service.create_sales_order(payload, frappe_module=fake_frappe)
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["name"], "SAL-ORD-00001")
+        self.assertEqual(len(fake_frappe.created_sales_orders), 1)
+        self.assertEqual(fake_frappe.created_sales_orders[0]["doctype"], "Sales Order")
+
+    def test_sync_order_to_erp_creates_sales_order_and_marks_synced(self):
+        fake_frappe = FakeFrappe(
+            orders=[_sync_order("MADAR-ORD-1", status="approved", items_count=1)],
+            items=[_item("LINE-1", "MADAR-ORD-1")],
+            today="2026-05-19",
+        )
+
+        result = erp_sync_service.sync_order_to_erp(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["erp_sales_order"], "SAL-ORD-00001")
+        self.assertEqual(result["data"]["erp_sync_status"], "synced")
+        self.assertEqual(fake_frappe.orders[0]["erp_sales_order"], "SAL-ORD-00001")
+        self.assertEqual(fake_frappe.orders[0]["erp_sync_status"], "synced")
+
+    def test_sync_order_to_erp_tracks_safe_failure_message(self):
+        fake_frappe = FakeFrappe(
+            orders=[_sync_order("MADAR-ORD-1", status="approved", items_count=1)],
+            items=[_item("LINE-1", "MADAR-ORD-1")],
+            insert_error=RuntimeError("Traceback: Customer missing\nsecret-token"),
+        )
+
+        result = erp_sync_service.sync_order_to_erp(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "ERP_SYNC_FAILED")
+        self.assertEqual(fake_frappe.orders[0]["erp_sync_status"], "failed")
+        self.assertEqual(fake_frappe.orders[0]["erp_sync_error"], "Traceback: Customer missing")
+
+    def test_sync_order_to_erp_rejects_already_synced_without_creating_duplicate(self):
+        fake_frappe = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-1",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-OLD",
+                )
+            ],
+            items=[_item("LINE-1", "MADAR-ORD-1")],
+        )
+
+        result = erp_sync_service.sync_order_to_erp(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "ORDER_ALREADY_SYNCED")
+        self.assertEqual(fake_frappe.created_sales_orders, [])
+
 
 def _sync_order(
     name,
@@ -155,18 +249,21 @@ class FakeOrderDoc:
 
 
 class FakeFrappe:
-    def __init__(self, *, orders=None, items=None):
+    def __init__(self, *, orders=None, items=None, today="2026-05-19", insert_error=None):
         self.orders = list(orders or [])
         self.items = list(items or [])
         self.created_sales_orders = []
+        self.today = today
+        self.insert_error = insert_error
         self.audit_events = []
         self.db = types.SimpleNamespace(commit=lambda: None)
+        self.utils = types.SimpleNamespace(nowdate=lambda: self.today)
 
     def get_doc(self, doctype_or_values, name=None):
         if isinstance(doctype_or_values, dict):
             if doctype_or_values.get("doctype") == "Sales Order":
-                self.created_sales_orders.append(doctype_or_values)
-            raise AssertionError("ERP sync boundary must not create documents")
+                return FakeSalesOrderDoc(self, dict(doctype_or_values))
+            raise AssertionError("ERP sync boundary must only create Sales Order documents")
         if doctype_or_values == "Madar Order":
             for row in self.orders:
                 if row["name"] == name:
@@ -181,6 +278,23 @@ class FakeFrappe:
             for key, value in filters.items():
                 rows = [row for row in rows if row.get(key) == value]
         return [types.SimpleNamespace(**{field: row.get(field) for field in fields}) for row in rows[:limit]]
+
+
+class FakeSalesOrderDoc:
+    def __init__(self, fake_frappe, values):
+        self._fake_frappe = fake_frappe
+        self._values = values
+        self.name = None
+        for key, value in values.items():
+            setattr(self, key, value)
+
+    def insert(self, ignore_permissions=False):
+        if self._fake_frappe.insert_error:
+            raise self._fake_frappe.insert_error
+        self.name = f"SAL-ORD-{len(self._fake_frappe.created_sales_orders) + 1:05d}"
+        self._values["name"] = self.name
+        self._fake_frappe.created_sales_orders.append(self._values)
+        return self
 
 
 if __name__ == "__main__":

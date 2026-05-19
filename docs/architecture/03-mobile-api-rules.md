@@ -135,6 +135,8 @@ Approval actions are also Madar-only. Flutter sends only the order name and the 
 
 Approved orders may include ERP sync metadata such as `erp_sync_status`, `erp_sync_error`, and `erp_sales_order` in safe order responses. Flutter may display this metadata as read-only context, but it must not expose ERP sync actions. R3-T04 sync helpers are internal service methods only and do not create ERPNext Sales Orders.
 
+R3-T05 keeps ERP sync internal/admin-only. Mobile clients must not receive a sync button or call ERPNext APIs directly. When an approved order is synced server-side, Flutter may display `تمت المزامنة`; when sync fails, Flutter may display `فشل في المزامنة` from safe Madar metadata only.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

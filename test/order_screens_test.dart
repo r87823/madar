@@ -97,6 +97,21 @@ void main() {
     expect(find.text('إضافة صنف'), findsNothing);
     expect(find.text('إرسال الطلب'), findsNothing);
   });
+
+  testWidgets('order list shows synced and failed ERP labels', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: OrderListScreen(apiClient: _syncStatusOrdersClient()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('تمت المزامنة'), findsOneWidget);
+    expect(find.text('فشل في المزامنة'), findsOneWidget);
+  });
 }
 
 FrappeApiClient _ordersClient() {
@@ -120,6 +135,46 @@ FrappeApiClient _ordersClient() {
                     'assigned_branch': 'Main Branch',
                     'created_by_user': 'branch.user@example.com',
                     'notes': '',
+                  },
+                ],
+              },
+              'error': null,
+            },
+          }),
+        ),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    }),
+  );
+}
+
+FrappeApiClient _syncStatusOrdersClient() {
+  return FrappeApiClient(
+    baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+    sessionStore: MemorySessionStore(sid: 'abc123'),
+    httpClient: MockClient((request) async {
+      return http.Response.bytes(
+        utf8.encode(
+          jsonEncode({
+            'message': {
+              'ok': true,
+              'data': {
+                'items': [
+                  {
+                    'name': 'MADAR-ORD-SYNCED',
+                    'customer_name': 'عميل تمت مزامنته',
+                    'customer_phone': '0500000000',
+                    'order_status': 'approved',
+                    'erp_sync_status': 'synced',
+                    'erp_sales_order': 'SAL-ORD-1',
+                  },
+                  {
+                    'name': 'MADAR-ORD-FAILED',
+                    'customer_name': 'عميل فشل',
+                    'customer_phone': '0500000001',
+                    'order_status': 'approved',
+                    'erp_sync_status': 'failed',
                   },
                 ],
               },

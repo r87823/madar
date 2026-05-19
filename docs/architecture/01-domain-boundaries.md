@@ -31,6 +31,8 @@ R3-T03 adds branch supervisor approval decisions for submitted Madar orders. App
 
 R3-T04 freezes approved Madar orders and introduces an internal ERP sync boundary. The boundary can validate an approved order and prepare a safe Sales Order-shaped payload, but it must not insert ERPNext `Sales Order` documents, mutate stock, create invoices, or post accounting entries. Actual ERPNext synchronization remains a later explicit server-side task.
 
+R3-T05 adds the first one-way internal sync from an approved `Madar Order` to a draft ERPNext `Sales Order`. The Madar order remains the operational workflow source, while the ERPNext Sales Order is the commercial/accounting representation for later ERP processing. This sync does not submit the Sales Order, reserve stock, create Delivery Notes, create Sales Invoices, create Payment Entries, or trigger production.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

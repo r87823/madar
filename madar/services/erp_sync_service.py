@@ -4,6 +4,79 @@ from madar.services import order_service
 ITEM_FIELDS = ["item_code", "qty", "unit_price"]
 
 
+def sync_order_to_erp(order_name, frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    validation = validate_order_ready_for_sync(order_name, frappe_module=frappe_module)
+    if not validation["ok"]:
+        return validation
+
+    payload = prepare_sales_order_payload(order_name, frappe_module=frappe_module)
+    if not payload["ok"]:
+        return payload
+
+    created = create_sales_order(payload["data"], frappe_module=frappe_module)
+    if not created["ok"]:
+        mark_sync_failed(
+            order_name,
+            created["error"]["message"],
+            frappe_module=frappe_module,
+        )
+        return created
+
+    return mark_sync_success(
+        order_name,
+        created["data"]["name"],
+        frappe_module=frappe_module,
+    )
+
+
+def create_sales_order(payload, frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    try:
+        doc = frappe_module.get_doc(
+            map_madar_order_to_sales_order(payload, frappe_module=frappe_module)
+        ).insert(ignore_permissions=True)
+        _commit(frappe_module)
+        return _ok({"name": order_service._get_value(doc, "name")})
+    except Exception as exc:
+        return _error("ERP_SYNC_FAILED", _safe_error_message(exc))
+
+
+def map_madar_order_to_sales_order(payload, frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    madar_order = payload.get("madar_order")
+    notes = (payload.get("notes") or "").strip()
+    remarks_parts = []
+    if notes:
+        remarks_parts.append(notes)
+    if madar_order:
+        remarks_parts.append(f"Madar Order: {madar_order}")
+
+    transaction_date = frappe_module.utils.nowdate()
+    return {
+        "doctype": "Sales Order",
+        "customer": payload.get("customer"),
+        "transaction_date": transaction_date,
+        "delivery_date": transaction_date,
+        "items": [
+            {
+                "item_code": item.get("item_code"),
+                "qty": _float(item.get("qty")),
+                "rate": _float(item.get("rate")),
+                "delivery_date": transaction_date,
+            }
+            for item in payload.get("items", [])
+        ],
+        "remarks": "\n".join(remarks_parts),
+    }
+
+
 def validate_order_ready_for_sync(order_name, frappe_module=None):
     order, error = _get_order(order_name, frappe_module)
     if error:
@@ -122,6 +195,11 @@ def _float(value):
         return float(value or 0)
     except (TypeError, ValueError):
         return 0
+
+
+def _safe_error_message(exc):
+    message = str(exc).strip().splitlines()[0] if str(exc).strip() else "ERP sync failed"
+    return message[:200]
 
 
 def _ok(data):
