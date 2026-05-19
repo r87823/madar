@@ -6,16 +6,19 @@ import 'items/order_items_section.dart';
 import 'items/product_models.dart';
 import 'items/product_picker_sheet.dart';
 import 'order_models.dart';
+import '../payments/payment_section.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   const OrderDetailScreen({
     required this.apiClient,
     required this.initialOrder,
+    this.canCollectPayments = false,
     super.key,
   });
 
   final FrappeApiClient apiClient;
   final MadarOrder initialOrder;
+  final bool canCollectPayments;
 
   @override
   State<OrderDetailScreen> createState() => _OrderDetailScreenState();
@@ -97,7 +100,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
           OrderItemsSection(
             items: _itemList.items,
             subtotal: _currentSubtotal,
@@ -106,6 +108,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             onIncrease: (item) => _setQty(item, item.qty + 1),
             onDecrease: (item) => _setQty(item, item.qty - 1),
             onRemove: _removeItem,
+          ),
+          const SizedBox(height: 16),
+          PaymentSection(
+            apiClient: widget.apiClient,
+            order: _order,
+            canCollect: widget.canCollectPayments,
           ),
           if (_message != null) ...[
             const SizedBox(height: 12),

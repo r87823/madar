@@ -10,6 +10,7 @@ import '../../features/delivery/delivery_batch_models.dart';
 import '../../features/orders/items/order_item_models.dart';
 import '../../features/orders/items/product_models.dart';
 import '../../features/orders/order_models.dart';
+import '../../features/payments/payment_models.dart';
 import '../../features/production/production_mapping_models.dart';
 import '../../features/production/work_order_models.dart';
 import 'http_client_factory.dart';
@@ -225,6 +226,38 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر تسجيل تعذر التسليم');
     return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<PaymentList> listOrderPayments(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.payments.list_order_payments'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل مدفوعات الطلب');
+    return PaymentList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<PaymentCollectionResult> collectPayment({
+    required String orderName,
+    required double amount,
+    required PaymentMethod paymentMethod,
+    String referenceNo = '',
+    String notes = '',
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.payments.collect_payment'),
+      headers: _headers(),
+      body: {
+        'order_name': orderName,
+        'amount': amount.toString(),
+        'payment_method': paymentMethod.apiValue,
+        'reference_no': referenceNo,
+        'notes': notes,
+      },
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحصيل الدفع');
+    return PaymentCollectionResult.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<DeliveryBatch> createDeliveryBatch(List<String> orderNames) async {

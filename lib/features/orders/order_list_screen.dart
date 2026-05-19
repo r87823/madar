@@ -119,8 +119,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
   Future<void> _openDetails(MadarOrder order) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) =>
-            OrderDetailScreen(apiClient: widget.apiClient, initialOrder: order),
+        builder: (_) => OrderDetailScreen(
+          apiClient: widget.apiClient,
+          initialOrder: order,
+          canCollectPayments:
+              widget.userContext?.permissions.contains('payments.collect') ??
+              false,
+        ),
       ),
     );
     await _loadOrders();

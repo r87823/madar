@@ -36,6 +36,9 @@
     "delivered_at",
     "failed_delivery_at",
     "failed_delivery_reason",
+    "paid_amount",
+    "remaining_amount",
+    "payment_status",
     "erp_sync_status",
     "erp_sync_error",
     "erp_sales_order"
@@ -231,6 +234,28 @@
       "fieldname": "failed_delivery_reason",
       "fieldtype": "Small Text",
       "label": "Failed Delivery Reason",
+      "read_only": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "paid_amount",
+      "fieldtype": "Currency",
+      "label": "Paid Amount",
+      "read_only": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "remaining_amount",
+      "fieldtype": "Currency",
+      "label": "Remaining Amount",
+      "read_only": 1
+    },
+    {
+      "default": "unpaid",
+      "fieldname": "payment_status",
+      "fieldtype": "Select",
+      "label": "Payment Status",
+      "options": "unpaid\npartially_paid\npaid",
       "read_only": 1
     },
     {

@@ -78,6 +78,31 @@ void main() {
             },
           });
         }
+        if (request.url.path.endsWith('list_order_payments')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {'items': []},
+              'error': null,
+            },
+          });
+        }
+        if (request.url.path.endsWith('collect_payment')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {
+                'name': 'PAY-1',
+                'madar_order': 'MADAR-ORD-1',
+                'amount': 10,
+                'payment_method': 'cash',
+                'payment_status': 'collected',
+                'collection_context': 'delivery',
+              },
+              'error': null,
+            },
+          });
+        }
         return _jsonResponse({
           'message': {
             'ok': true,
@@ -103,6 +128,7 @@ void main() {
 
     await tester.tap(find.text('MADAR-DBATCH-1'));
     await tester.pumpAndSettle();
+    expect(find.text('المدفوعات'), findsOneWidget);
     await tester.tap(find.text('استلام الدفعة'));
     await tester.pumpAndSettle();
 
@@ -110,6 +136,88 @@ void main() {
       requests.any(
         (request) => request.url.path.endsWith('mark_batch_picked_up'),
       ),
+      isTrue,
+    );
+  });
+
+  testWidgets('driver can collect payment from assigned batch order', (
+    tester,
+  ) async {
+    final requests = <http.Request>[];
+    final client = FrappeApiClient(
+      baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+      sessionStore: MemorySessionStore(sid: 'abc123'),
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        if (request.url.path.endsWith('list_my_delivery_batches')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {
+                'items': [_batchMap(status: 'assigned')],
+              },
+              'error': null,
+            },
+          });
+        }
+        if (request.url.path.endsWith('get_delivery_batch')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': _batchMap(status: 'assigned', includeOrders: true),
+              'error': null,
+            },
+          });
+        }
+        if (request.url.path.endsWith('list_order_payments')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {'items': []},
+              'error': null,
+            },
+          });
+        }
+        if (request.url.path.endsWith('collect_payment')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {
+                'name': 'PAY-1',
+                'madar_order': 'MADAR-ORD-1',
+                'amount': 10,
+                'payment_method': 'cash',
+                'payment_status': 'collected',
+                'collection_context': 'delivery',
+              },
+              'error': null,
+            },
+          });
+        }
+        return _jsonResponse({
+          'message': {'ok': true, 'data': {}, 'error': null},
+        });
+      }),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: DeliveryBatchListScreen(apiClient: client),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('MADAR-DBATCH-1'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('تحصيل الدفع'));
+    await tester.enterText(find.widgetWithText(TextField, 'المبلغ'), '10');
+    await tester.tap(find.text('تحصيل الدفع'));
+    await tester.pumpAndSettle();
+
+    expect(
+      requests.any((request) => request.url.path.endsWith('collect_payment')),
       isTrue,
     );
   });
@@ -139,6 +247,9 @@ Map<String, dynamic> _batchMap({
           'production_status': 'ready',
           'delivery_status': 'dispatched_to_branch',
           'subtotal': 10,
+          'paid_amount': 0,
+          'remaining_amount': 10,
+          'payment_status': 'unpaid',
           'items_count': 1,
         },
       ],

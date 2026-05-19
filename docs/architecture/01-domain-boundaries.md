@@ -49,6 +49,12 @@ R5-T02 adds `Madar Delivery Batch` as the operational assignment unit for driver
 
 Branch pickup orders form `branch_transfer` batches and must share the same destination branch. Customer delivery orders form `customer_delivery` batches. Batch pickup, out-for-delivery, delivered, and returned transitions remain inside Madar and cascade safe delivery status updates to linked Madar orders. This still does not create ERPNext Delivery Notes, stock movements, invoices, payments, cashbox records, GPS records, or route optimization artifacts.
 
+### Operational Payments
+
+R6-T01 adds `Madar Payment` as the operational collection record. Madar updates payment summaries on `Madar Order` (`paid_amount`, `remaining_amount`, and `payment_status`) from collected Madar payments only.
+
+Operational payments are not ERPNext accounting entries. This phase must not create ERPNext `Payment Entry`, `Sales Invoice`, cashbox records, refunds, terminal integrations, or accounting postings. ERPNext payment synchronization and cashbox custody are later explicit workflows.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

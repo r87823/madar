@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../payments/payment_section.dart';
 import 'delivery_batch_models.dart';
 
 class DeliveryBatchListScreen extends StatefulWidget {
@@ -193,17 +194,27 @@ class _DeliveryBatchDetailScreenState extends State<DeliveryBatchDetailScreen> {
               ...batch.orders.map(
                 (order) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: Card(
-                    color: Colors.white,
-                    child: ListTile(
-                      title: Text(
-                        order.customerName.isEmpty
-                            ? order.name
-                            : order.customerName,
+                  child: Column(
+                    children: [
+                      Card(
+                        color: Colors.white,
+                        child: ListTile(
+                          title: Text(
+                            order.customerName.isEmpty
+                                ? order.name
+                                : order.customerName,
+                          ),
+                          subtitle: Text(order.deliveryStatus.arabicLabel),
+                          trailing: Text(order.subtotal.toStringAsFixed(2)),
+                        ),
                       ),
-                      subtitle: Text(order.deliveryStatus.arabicLabel),
-                      trailing: Text(order.subtotal.toStringAsFixed(2)),
-                    ),
+                      const SizedBox(height: 8),
+                      PaymentSection(
+                        apiClient: widget.apiClient,
+                        order: order,
+                        canCollect: true,
+                      ),
+                    ],
                   ),
                 ),
               ),

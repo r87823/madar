@@ -201,6 +201,39 @@ enum OrderDeliveryStatus {
   }
 }
 
+enum OrderPaymentStatus {
+  unpaid,
+  partiallyPaid,
+  paid,
+  unknown;
+
+  String get arabicLabel {
+    switch (this) {
+      case OrderPaymentStatus.unpaid:
+        return 'غير مدفوع';
+      case OrderPaymentStatus.partiallyPaid:
+        return 'مدفوع جزئيًا';
+      case OrderPaymentStatus.paid:
+        return 'مدفوع';
+      case OrderPaymentStatus.unknown:
+        return 'غير معروف';
+    }
+  }
+
+  static OrderPaymentStatus fromString(String? value) {
+    switch (value) {
+      case 'unpaid':
+        return OrderPaymentStatus.unpaid;
+      case 'partially_paid':
+        return OrderPaymentStatus.partiallyPaid;
+      case 'paid':
+        return OrderPaymentStatus.paid;
+      default:
+        return OrderPaymentStatus.unknown;
+    }
+  }
+}
+
 class MadarOrder {
   const MadarOrder({
     required this.name,
@@ -230,6 +263,9 @@ class MadarOrder {
     this.deliveredAt,
     this.failedDeliveryAt,
     this.failedDeliveryReason,
+    this.paidAmount = 0,
+    this.remainingAmount = 0,
+    this.paymentStatus = OrderPaymentStatus.unpaid,
     this.erpSyncStatus,
     this.erpSyncError,
     this.erpSalesOrder,
@@ -262,6 +298,9 @@ class MadarOrder {
   final String? deliveredAt;
   final String? failedDeliveryAt;
   final String? failedDeliveryReason;
+  final double paidAmount;
+  final double remainingAmount;
+  final OrderPaymentStatus paymentStatus;
   final String? erpSyncStatus;
   final String? erpSyncError;
   final String? erpSalesOrder;
@@ -313,6 +352,11 @@ class MadarOrder {
       deliveredAt: map['delivered_at']?.toString(),
       failedDeliveryAt: map['failed_delivery_at']?.toString(),
       failedDeliveryReason: map['failed_delivery_reason']?.toString(),
+      paidAmount: _toDouble(map['paid_amount']),
+      remainingAmount: _toDouble(map['remaining_amount']),
+      paymentStatus: OrderPaymentStatus.fromString(
+        map['payment_status']?.toString() ?? 'unpaid',
+      ),
       erpSyncStatus: map['erp_sync_status']?.toString(),
       erpSyncError: map['erp_sync_error']?.toString(),
       erpSalesOrder: map['erp_sales_order']?.toString(),

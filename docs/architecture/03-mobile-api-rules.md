@@ -246,6 +246,24 @@ Drivers are assigned to `Madar Delivery Batch`, not directly to individual order
 
 Flutter may select ready orders, request a batch, assign a driver by user id/email, and let the assigned driver update batch status. Flutter must not send order delivery statuses, create ERPNext delivery documents, move stock, collect payment, create cashbox entries, or call ERPNext Delivery Note APIs.
 
+## Payment Collection Endpoints
+
+R6-T01 exposes Madar-only operational payment endpoints:
+
+```text
+/api/method/madar.api.payments.collect_payment
+/api/method/madar.api.payments.list_order_payments
+/api/method/madar.api.payments.get_payment
+```
+
+These endpoints require authentication. `collect_payment` requires `payments.collect`, validates amount and payment method server-side, derives collection scope from the authenticated user, and recalculates `paid_amount`, `remaining_amount`, and `payment_status` on the Madar Order through the payment service.
+
+Flutter may send only `order_name`, `amount`, `payment_method`, optional `reference_no`, and optional notes. Flutter must not send card details, order payment totals, cashbox custody data, ERPNext Payment Entry data, Sales Invoice data, or accounting posting fields.
+
+Branch pickup collection is branch-scoped. Customer delivery collection is limited to orders linked to a delivery batch assigned to the driver. `system.full_access` may collect as admin context.
+
+This phase must not create ERPNext `Payment Entry`, `Sales Invoice`, cashbox entries, refunds, terminal transactions, or accounting ledger entries.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.
