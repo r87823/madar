@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/session_store.dart';
 import '../auth/user_context.dart';
+import '../../features/attendance/attendance_status.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -50,6 +51,33 @@ class FrappeApiClient {
     await _sessionStore.clear();
   }
 
+  Future<AttendanceStatus> getAttendanceStatus() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.attendance.get_status'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل حالة الحضور');
+    return _attendanceFromResponse(response);
+  }
+
+  Future<AttendanceStatus> checkIn() async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.attendance.check_in'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسجيل الحضور');
+    return _attendanceFromResponse(response);
+  }
+
+  Future<AttendanceStatus> checkOut() async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.attendance.check_out'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسجيل الانصراف');
+    return _attendanceFromResponse(response);
+  }
+
   Uri _methodUri(String method) {
     return baseUri.replace(path: '/api/method/$method', query: '');
   }
@@ -71,6 +99,20 @@ class FrappeApiClient {
       return decoded.map((key, value) => MapEntry('$key', value));
     }
     return <String, dynamic>{};
+  }
+
+  AttendanceStatus _attendanceFromResponse(http.Response response) {
+    final payload = _decodeJson(response);
+    final message = payload['message'];
+    final map = message is Map
+        ? message.map((key, value) => MapEntry('$key', value))
+        : payload;
+    if (map['ok'] == false) {
+      final error = map['error'];
+      final message = error is Map ? error['message'] : null;
+      throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
+    }
+    return AttendanceStatus.fromEnvelope(map);
   }
 
   void _throwIfFailed(http.Response response, {required String fallback}) {

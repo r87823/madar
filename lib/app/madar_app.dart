@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/api/frappe_api_client.dart';
 import '../core/auth/auth_controller.dart';
+import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 
@@ -14,13 +15,13 @@ class MadarApp extends StatefulWidget {
 
 class _MadarAppState extends State<MadarApp> {
   late final AuthController _authController;
+  late final FrappeApiClient _apiClient;
 
   @override
   void initState() {
     super.initState();
-    _authController = AuthController(
-      apiClient: FrappeApiClient(baseUri: FrappeApiClient.staging),
-    );
+    _apiClient = FrappeApiClient(baseUri: FrappeApiClient.staging);
+    _authController = AuthController(apiClient: _apiClient);
   }
 
   @override
@@ -68,6 +69,13 @@ class _MadarAppState extends State<MadarApp> {
           return DashboardScreen(
             context: currentContext,
             onLogout: _authController.logout,
+            onOpenAttendance: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AttendanceScreen(apiClient: _apiClient),
+                ),
+              );
+            },
           );
         },
       ),

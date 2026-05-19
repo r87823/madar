@@ -71,6 +71,12 @@ Suggested categories:
 - `BACKGROUND_JOB_QUEUED`.
 - `INTERNAL_ERROR`.
 
+Attendance endpoints also use:
+
+- `EMPLOYEE_NOT_LINKED`.
+- `EMPLOYEE_CHECKIN_UNAVAILABLE`.
+- `DUPLICATE_CHECKIN`.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

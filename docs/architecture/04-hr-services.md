@@ -83,6 +83,23 @@ The development bootstrap may create minimal Frappe User records, assign Madar r
 
 Development user passwords must come from protected deployment configuration or environment and must not be committed, documented, printed, or stored in project files.
 
+## Attendance Check-in MVP
+
+Madar exposes mobile attendance APIs as a thin, permission-checked layer over Frappe HR Employee Checkin:
+
+- `/api/method/madar.api.attendance.get_status`.
+- `/api/method/madar.api.attendance.check_in`.
+- `/api/method/madar.api.attendance.check_out`.
+
+All attendance APIs require authentication. Mutating attendance APIs require Madar permission keys:
+
+- `attendance.check_in` for check-in.
+- `attendance.check_out` for check-out.
+
+The backend derives the Employee from the authenticated Frappe session user. Flutter must not send `employee`, `time`, or `log_type`. Madar uses server time only and sets `log_type` internally based on the endpoint: `IN` for check-in and `OUT` for check-out.
+
+If the current user is not linked to an Employee, or if the Employee Checkin DocType is unavailable, the API returns a safe stable error response. The MVP writes only Employee Checkin records and does not write Attendance, payroll, salary, leave, auto-attendance, or approval data.
+
 ## Rules
 
 - Do not expose HRMS sensitive resources directly to Flutter.

@@ -8,11 +8,13 @@ class DashboardScreen extends StatelessWidget {
   const DashboardScreen({
     required this.context,
     required this.onLogout,
+    required this.onOpenAttendance,
     super.key,
   });
 
   final UserContext context;
   final Future<void> Function() onLogout;
+  final VoidCallback onOpenAttendance;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -88,7 +90,10 @@ class DashboardScreen extends StatelessWidget {
                   childAspectRatio: width < 520 ? 1.05 : 1.45,
                 ),
                 itemBuilder: (context, index) {
-                  return _DashboardCard(card: cards[index]);
+                  return _DashboardCard(
+                    card: cards[index],
+                    onOpenAttendance: onOpenAttendance,
+                  );
                 },
               );
             },
@@ -163,9 +168,10 @@ class _ScopeSection extends StatelessWidget {
 }
 
 class _DashboardCard extends StatelessWidget {
-  const _DashboardCard({required this.card});
+  const _DashboardCard({required this.card, required this.onOpenAttendance});
 
   final DashboardCardDefinition card;
+  final VoidCallback onOpenAttendance;
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +181,10 @@ class _DashboardCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () {
+          if (card.title == 'الحضور والانصراف') {
+            onOpenAttendance();
+            return;
+          }
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('${card.title}: قريبًا')));
