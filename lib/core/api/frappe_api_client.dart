@@ -147,6 +147,51 @@ class FrappeApiClient {
     return MadarOrder.fromEnvelope(_safeEnvelope(response));
   }
 
+  Future<OrderList> listApprovalQueue() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.orders.list_approval_queue'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل طلبات الاعتماد');
+    return OrderList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarOrder> approveOrder(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.orders.approve_order'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر اعتماد الطلب');
+    return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarOrder> returnOrderForEdit(
+    String orderName, {
+    required String reason,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.orders.return_order_for_edit'),
+      headers: _headers(),
+      body: {'order_name': orderName, 'reason': reason},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إعادة الطلب للتعديل');
+    return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarOrder> rejectOrder(
+    String orderName, {
+    required String reason,
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.orders.reject_order'),
+      headers: _headers(),
+      body: {'order_name': orderName, 'reason': reason},
+    );
+    _throwIfFailed(response, fallback: 'تعذر رفض الطلب');
+    return MadarOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
   Future<ProductList> listProducts({String search = ''}) async {
     final response = await _httpClient.get(
       baseUri.replace(

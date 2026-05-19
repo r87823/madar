@@ -27,6 +27,8 @@ R3-T02 adds `Madar Order Item` records and order totals for operational draft ca
 
 Madar may expose a safe product catalog bridge over ERPNext `Item`, but Flutter must never call ERPNext Item APIs directly. The bridge returns only mobile-safe display fields and an optional safe default price.
 
+R3-T03 adds branch supervisor approval decisions for submitted Madar orders. Approval, return-for-edit, and rejection remain Madar operational states only and must not create ERPNext Sales Orders or downstream stock/accounting documents.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

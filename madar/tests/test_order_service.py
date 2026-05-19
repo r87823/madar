@@ -92,7 +92,10 @@ class OrderServiceTest(unittest.TestCase):
 
     def test_submit_order_requires_permission_and_transitions_from_draft(self):
         now = datetime(2026, 5, 19, 12, 0, 0)
-        fake_frappe = FakeFrappe(now=now, orders=[_order("MADAR-ORD-1", "Main Branch", "branch.user@example.com")])
+        fake_frappe = FakeFrappe(
+            now=now,
+            orders=[_order("MADAR-ORD-1", "Main Branch", "branch.user@example.com", items_count=1)],
+        )
 
         result = order_service.submit_order(
             user="branch.user@example.com",
@@ -147,7 +150,7 @@ class OrderServiceTest(unittest.TestCase):
         self.assertEqual(rejected["error"]["code"], "INVALID_ORDER_TRANSITION")
 
 
-def _order(name, branch, created_by_user, status="draft"):
+def _order(name, branch, created_by_user, status="draft", items_count=0, subtotal=0):
     return {
         "doctype": "Madar Order",
         "name": name,
@@ -158,6 +161,8 @@ def _order(name, branch, created_by_user, status="draft"):
         "order_status": status,
         "created_by_user": created_by_user,
         "notes": "",
+        "subtotal": subtotal,
+        "items_count": items_count,
         "submitted_at": None,
         "cancelled_at": None,
         "creation": name,

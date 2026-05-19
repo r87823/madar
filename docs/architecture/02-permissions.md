@@ -128,6 +128,14 @@ R3-T02 order item APIs reuse the same order permissions and scopes:
 - `submitted` and `cancelled` orders reject item mutations.
 - Totals are recalculated in `madar.services.order_item_service`, not in Flutter or API wrappers.
 
+R3-T03 approval APIs use:
+
+- `orders.submit_for_approval` to submit `draft` or `returned_for_edit` orders.
+- `orders.approve` to list the approval queue and approve, return, or reject submitted orders.
+- Approval queue visibility is branch-scoped for supervisors and wildcard-scoped for `system.full_access`.
+- Return and reject decisions require a reason and add an audit comment.
+- `approved` and `rejected` orders are not editable by order item APIs.
+
 ## Sensitive Mutations
 
 Any future sensitive mutation must create an audit log. Examples include payment changes, cashbox actions, delivery status changes, production status changes, approval decisions, and employee self-service mutations.

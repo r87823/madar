@@ -81,7 +81,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           OrderItemsSection(
             items: _itemList.items,
             subtotal: _currentSubtotal,
-            canEdit: _order.status == OrderStatus.draft,
+            canEdit: _canEditOrder,
             onAdd: _openProductPicker,
             onIncrease: (item) => _setQty(item, item.qty + 1),
             onDecrease: (item) => _setQty(item, item.qty - 1),
@@ -100,7 +100,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          if (_order.status == OrderStatus.draft)
+          if (_canSubmitOrder)
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -127,6 +127,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       () => widget.apiClient.submitOrder(_order.name),
       'تم إرسال الطلب.',
     );
+  }
+
+  bool get _canEditOrder {
+    return _order.status == OrderStatus.draft ||
+        _order.status == OrderStatus.returnedForEdit;
+  }
+
+  bool get _canSubmitOrder {
+    return _order.status == OrderStatus.draft ||
+        _order.status == OrderStatus.returnedForEdit;
   }
 
   double get _currentSubtotal {

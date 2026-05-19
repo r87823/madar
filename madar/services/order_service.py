@@ -5,6 +5,7 @@ from madar.services.employee_context import get_employee_context
 
 CREATE_PERMISSION = "orders.create"
 SUBMIT_PERMISSION = "orders.submit_for_approval"
+APPROVE_PERMISSION = "orders.approve"
 FULL_ACCESS_PERMISSION = "system.full_access"
 ORDER_FIELDS = [
     "name",
@@ -19,6 +20,10 @@ ORDER_FIELDS = [
     "items_count",
     "submitted_at",
     "cancelled_at",
+    "approved_at",
+    "returned_at",
+    "rejected_at",
+    "approval_reason",
     "creation",
     "modified",
 ]
@@ -95,8 +100,10 @@ def submit_order(user, order_name, frappe_module=None):
     doc = _get_scoped_order(user, order_name, permissions, frappe_module)
     if not doc:
         return _error("ORDER_NOT_FOUND", "الطلب غير موجود أو خارج نطاقك.")
-    if _get_value(doc, "order_status") != "draft":
-        return _error("INVALID_ORDER_TRANSITION", "يمكن إرسال الطلبات المسودة فقط.")
+    if _get_value(doc, "order_status") not in {"draft", "returned_for_edit"}:
+        return _error("INVALID_ORDER_TRANSITION", "يمكن إرسال الطلبات المسودة أو المعادة للتعديل فقط.")
+    if int(_float(_get_value(doc, "items_count"))) <= 0:
+        return _error("ORDER_HAS_NO_ITEMS", "لا يمكن إرسال طلب بدون أصناف.")
 
     now = _server_now(frappe_module)
     doc.order_status = "submitted"
@@ -105,6 +112,58 @@ def submit_order(user, order_name, frappe_module=None):
     _audit(doc, "submit_order", user, now)
     frappe_module.db.commit()
     return _ok(_serialize_order(doc))
+
+
+def list_approval_queue(user, frappe_module=None, limit=MAX_LIST_LIMIT):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    roles, permissions = _user_permissions(user, frappe_module)
+    if not has_permission(roles, APPROVE_PERMISSION):
+        return _error("PERMISSION_DENIED", "ليست لديك صلاحية اعتماد الطلبات.")
+
+    filters = _scope_filters(user, permissions, _employee(user, frappe_module))
+    filters["order_status"] = "submitted"
+    rows = frappe_module.get_all(
+        "Madar Order",
+        filters=filters,
+        fields=ORDER_FIELDS,
+        order_by="modified desc",
+        limit=max(1, min(int(limit or MAX_LIST_LIMIT), MAX_LIST_LIMIT)),
+    )
+    return _ok({"items": [_serialize_order(row) for row in rows]})
+
+
+def approve_order(user, order_name, frappe_module=None):
+    return _approval_transition(
+        user=user,
+        order_name=order_name,
+        next_status="approved",
+        action="approve_order",
+        frappe_module=frappe_module,
+    )
+
+
+def return_order_for_edit(user, order_name, reason, frappe_module=None):
+    return _approval_transition(
+        user=user,
+        order_name=order_name,
+        next_status="returned_for_edit",
+        action="return_order_for_edit",
+        reason=reason,
+        frappe_module=frappe_module,
+    )
+
+
+def reject_order(user, order_name, reason, frappe_module=None):
+    return _approval_transition(
+        user=user,
+        order_name=order_name,
+        next_status="rejected",
+        action="reject_order",
+        reason=reason,
+        frappe_module=frappe_module,
+    )
 
 
 def cancel_order(user, order_name, frappe_module=None):
@@ -126,6 +185,38 @@ def cancel_order(user, order_name, frappe_module=None):
     doc.cancelled_at = now
     doc.save(ignore_permissions=True)
     _audit(doc, "cancel_order", user, now)
+    frappe_module.db.commit()
+    return _ok(_serialize_order(doc))
+
+
+def _approval_transition(user, order_name, next_status, action, reason="", frappe_module=None):
+    if frappe_module is None:
+        import frappe as frappe_module
+
+    roles, permissions = _user_permissions(user, frappe_module)
+    if not has_permission(roles, APPROVE_PERMISSION):
+        return _error("PERMISSION_DENIED", "ليست لديك صلاحية اعتماد الطلبات.")
+    if next_status in {"returned_for_edit", "rejected"} and not (reason or "").strip():
+        return _error("REASON_REQUIRED", "سبب الإجراء مطلوب.")
+
+    doc = _get_scoped_order(user, order_name, permissions, frappe_module)
+    if not doc:
+        return _error("ORDER_NOT_FOUND", "الطلب غير موجود أو خارج نطاقك.")
+    if _get_value(doc, "order_status") != "submitted":
+        return _error("INVALID_ORDER_TRANSITION", "يمكن معالجة الطلبات المرسلة للاعتماد فقط.")
+
+    now = _server_now(frappe_module)
+    doc.order_status = next_status
+    if next_status == "approved":
+        doc.approved_at = now
+    elif next_status == "returned_for_edit":
+        doc.returned_at = now
+        doc.approval_reason = (reason or "").strip()
+    elif next_status == "rejected":
+        doc.rejected_at = now
+        doc.approval_reason = (reason or "").strip()
+    doc.save(ignore_permissions=True)
+    _audit(doc, action, user, now, reason=reason)
     frappe_module.db.commit()
     return _ok(_serialize_order(doc))
 
@@ -180,9 +271,10 @@ def _server_now(frappe_module):
     return frappe_module.utils.now_datetime()
 
 
-def _audit(doc, action, user, now):
+def _audit(doc, action, user, now, reason=""):
     if hasattr(doc, "add_comment"):
-        doc.add_comment("Info", f"{action} by {user} at {now}")
+        suffix = f" reason={reason}" if reason else ""
+        doc.add_comment("Info", f"{action} by {user} at {now}{suffix}")
 
 
 def _serialize_order(order):
@@ -199,6 +291,10 @@ def _serialize_order(order):
         "items_count": int(_float(_get_value(order, "items_count"))),
         "submitted_at": _string_or_none(_get_value(order, "submitted_at")),
         "cancelled_at": _string_or_none(_get_value(order, "cancelled_at")),
+        "approved_at": _string_or_none(_get_value(order, "approved_at")),
+        "returned_at": _string_or_none(_get_value(order, "returned_at")),
+        "rejected_at": _string_or_none(_get_value(order, "rejected_at")),
+        "approval_reason": _get_value(order, "approval_reason"),
         "creation": _string_or_none(_get_value(order, "creation")),
         "modified": _string_or_none(_get_value(order, "modified")),
     }

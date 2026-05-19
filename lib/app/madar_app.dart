@@ -5,6 +5,7 @@ import '../core/auth/auth_controller.dart';
 import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
+import '../features/orders/approval_queue_screen.dart';
 import '../features/orders/order_list_screen.dart';
 
 class MadarApp extends StatefulWidget {
@@ -81,6 +82,13 @@ class _MadarAppState extends State<MadarApp> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => OrderListScreen(apiClient: _apiClient),
+                ),
+              );
+            },
+            onOpenApprovalQueue: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ApprovalQueueScreen(apiClient: _apiClient),
                 ),
               );
             },

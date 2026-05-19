@@ -38,6 +38,30 @@ def cancel_order(order_name):
     return order_service.cancel_order(user, order_name)
 
 
+@frappe.whitelist()
+def list_approval_queue():
+    user = _authenticated_user()
+    return order_service.list_approval_queue(user)
+
+
+@frappe.whitelist()
+def approve_order(order_name):
+    user = _authenticated_user()
+    return order_service.approve_order(user, order_name)
+
+
+@frappe.whitelist()
+def return_order_for_edit(order_name, reason):
+    user = _authenticated_user()
+    return order_service.return_order_for_edit(user, order_name, reason)
+
+
+@frappe.whitelist()
+def reject_order(order_name, reason):
+    user = _authenticated_user()
+    return order_service.reject_order(user, order_name, reason)
+
+
 def _authenticated_user():
     user = frappe.session.user
     if user == "Guest":

@@ -33,6 +33,7 @@ void main() {
             onOpenOrders: () {
               opened = true;
             },
+            onOpenApprovalQueue: () {},
           ),
         ),
       ),

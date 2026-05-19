@@ -25,6 +25,7 @@ void main() {
               opened = true;
             },
             onOpenOrders: () {},
+            onOpenApprovalQueue: () {},
           ),
         ),
       ),

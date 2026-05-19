@@ -1,6 +1,9 @@
 enum OrderStatus {
   draft,
   submitted,
+  approved,
+  returnedForEdit,
+  rejected,
   cancelled,
   unknown;
 
@@ -9,7 +12,13 @@ enum OrderStatus {
       case OrderStatus.draft:
         return 'مسودة';
       case OrderStatus.submitted:
-        return 'تم الإرسال';
+        return 'مرسل للاعتماد';
+      case OrderStatus.approved:
+        return 'معتمد';
+      case OrderStatus.returnedForEdit:
+        return 'معاد للتعديل';
+      case OrderStatus.rejected:
+        return 'مرفوض';
       case OrderStatus.cancelled:
         return 'ملغي';
       case OrderStatus.unknown:
@@ -23,6 +32,12 @@ enum OrderStatus {
         return OrderStatus.draft;
       case 'submitted':
         return OrderStatus.submitted;
+      case 'approved':
+        return OrderStatus.approved;
+      case 'returned_for_edit':
+        return OrderStatus.returnedForEdit;
+      case 'rejected':
+        return OrderStatus.rejected;
       case 'cancelled':
         return OrderStatus.cancelled;
       default:

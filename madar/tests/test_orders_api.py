@@ -21,7 +21,7 @@ class OrdersApiTest(unittest.TestCase):
 
         orders = importlib.import_module("madar.api.orders")
 
-        self.assertEqual(len(whitelist_calls), 5)
+        self.assertEqual(len(whitelist_calls), 9)
         self.assertTrue(all(call == {"args": (), "kwargs": {}} for call in whitelist_calls))
         self.assertEqual(
             set(inspect.signature(orders.create_draft).parameters),
@@ -60,6 +60,10 @@ class OrdersApiTest(unittest.TestCase):
             get_order=lambda user, order_name: calls.append(("get", user, order_name)) or {"ok": True},
             submit_order=lambda user, order_name: calls.append(("submit", user, order_name)) or {"ok": True},
             cancel_order=lambda user, order_name: calls.append(("cancel", user, order_name)) or {"ok": True},
+            list_approval_queue=lambda user: calls.append(("queue", user)) or {"ok": True},
+            approve_order=lambda user, order_name: calls.append(("approve", user, order_name)) or {"ok": True},
+            return_order_for_edit=lambda user, order_name, reason: calls.append(("return", user, order_name, reason)) or {"ok": True},
+            reject_order=lambda user, order_name, reason: calls.append(("reject", user, order_name, reason)) or {"ok": True},
         )
 
         orders.create_draft(customer_name="Customer", customer_phone="05", notes="note")
@@ -67,6 +71,10 @@ class OrdersApiTest(unittest.TestCase):
         orders.get_order("MADAR-ORD-1")
         orders.submit_order("MADAR-ORD-1")
         orders.cancel_order("MADAR-ORD-1")
+        orders.list_approval_queue()
+        orders.approve_order("MADAR-ORD-1")
+        orders.return_order_for_edit("MADAR-ORD-1", "reason")
+        orders.reject_order("MADAR-ORD-1", "reason")
 
         self.assertEqual(
             calls,
@@ -80,6 +88,10 @@ class OrdersApiTest(unittest.TestCase):
                 ("get", "branch.user@example.com", "MADAR-ORD-1"),
                 ("submit", "branch.user@example.com", "MADAR-ORD-1"),
                 ("cancel", "branch.user@example.com", "MADAR-ORD-1"),
+                ("queue", "branch.user@example.com"),
+                ("approve", "branch.user@example.com", "MADAR-ORD-1"),
+                ("return", "branch.user@example.com", "MADAR-ORD-1", "reason"),
+                ("reject", "branch.user@example.com", "MADAR-ORD-1", "reason"),
             ],
         )
 

@@ -17,7 +17,11 @@
     "subtotal",
     "items_count",
     "submitted_at",
-    "cancelled_at"
+    "approved_at",
+    "returned_at",
+    "rejected_at",
+    "cancelled_at",
+    "approval_reason"
   ],
   "fields": [
     {
@@ -58,7 +62,7 @@
       "fieldtype": "Select",
       "in_list_view": 1,
       "label": "Order Status",
-      "options": "draft\nsubmitted\ncancelled",
+      "options": "draft\nsubmitted\napproved\nreturned_for_edit\nrejected\ncancelled",
       "reqd": 1
     },
     {
@@ -94,9 +98,33 @@
       "read_only": 1
     },
     {
+      "fieldname": "approved_at",
+      "fieldtype": "Datetime",
+      "label": "Approved At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "returned_at",
+      "fieldtype": "Datetime",
+      "label": "Returned At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rejected_at",
+      "fieldtype": "Datetime",
+      "label": "Rejected At",
+      "read_only": 1
+    },
+    {
       "fieldname": "cancelled_at",
       "fieldtype": "Datetime",
       "label": "Cancelled At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "approval_reason",
+      "fieldtype": "Small Text",
+      "label": "Approval Reason",
       "read_only": 1
     }
   ],

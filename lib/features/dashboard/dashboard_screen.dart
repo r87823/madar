@@ -10,6 +10,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onLogout,
     required this.onOpenAttendance,
     required this.onOpenOrders,
+    required this.onOpenApprovalQueue,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class DashboardScreen extends StatelessWidget {
   final Future<void> Function() onLogout;
   final VoidCallback onOpenAttendance;
   final VoidCallback onOpenOrders;
+  final VoidCallback onOpenApprovalQueue;
 
   @override
   Widget build(BuildContext buildContext) {
@@ -96,6 +98,7 @@ class DashboardScreen extends StatelessWidget {
                     card: cards[index],
                     onOpenAttendance: onOpenAttendance,
                     onOpenOrders: onOpenOrders,
+                    onOpenApprovalQueue: onOpenApprovalQueue,
                   );
                 },
               );
@@ -175,11 +178,13 @@ class _DashboardCard extends StatelessWidget {
     required this.card,
     required this.onOpenAttendance,
     required this.onOpenOrders,
+    required this.onOpenApprovalQueue,
   });
 
   final DashboardCardDefinition card;
   final VoidCallback onOpenAttendance;
   final VoidCallback onOpenOrders;
+  final VoidCallback onOpenApprovalQueue;
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +200,10 @@ class _DashboardCard extends StatelessWidget {
           }
           if (card.title == 'إنشاء طلب') {
             onOpenOrders();
+            return;
+          }
+          if (card.title == 'اعتماد الطلبات') {
+            onOpenApprovalQueue();
             return;
           }
           ScaffoldMessenger.of(
