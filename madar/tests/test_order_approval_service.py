@@ -102,6 +102,9 @@ class OrderApprovalServiceTest(unittest.TestCase):
         )
 
         self.assertEqual(approved["data"]["order_status"], "approved")
+        self.assertEqual(approved["data"]["approved_at"], str(now))
+        self.assertEqual(approved["data"]["approved_by"], "branch.supervisor@example.com")
+        self.assertEqual(approved["data"]["erp_sync_status"], "pending")
         self.assertEqual(returned["data"]["order_status"], "returned_for_edit")
         self.assertEqual(rejected["data"]["order_status"], "rejected")
         self.assertEqual(fake_frappe.audit_events[-3]["action"], "approve_order")

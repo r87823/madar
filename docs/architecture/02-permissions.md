@@ -135,6 +135,8 @@ R3-T03 approval APIs use:
 - Approval queue visibility is branch-scoped for supervisors and wildcard-scoped for `system.full_access`.
 - Return and reject decisions require a reason and add an audit comment.
 - `approved` and `rejected` orders are not editable by order item APIs.
+- Approved orders are operationally frozen and receive ERP sync metadata for the future server-side sync boundary.
+- ERP sync boundary helpers must remain internal service methods until a later task defines protected APIs, jobs, and permissions.
 
 ## Sensitive Mutations
 

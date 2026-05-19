@@ -10,7 +10,10 @@ import 'package:madar/features/orders/order_models.dart';
 void main() {
   test('order statuses include approval labels', () {
     expect(OrderStatus.fromString('submitted').arabicLabel, 'مرسل للاعتماد');
-    expect(OrderStatus.fromString('approved').arabicLabel, 'معتمد');
+    expect(
+      OrderStatus.fromString('approved').arabicLabel,
+      'معتمد - جاهز للمزامنة',
+    );
     expect(
       OrderStatus.fromString('returned_for_edit').arabicLabel,
       'معاد للتعديل',

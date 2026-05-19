@@ -55,6 +55,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   _Row(label: 'العميل', value: _order.customerName),
                   _Row(label: 'الجوال', value: _order.customerPhone),
                   _Row(label: 'الحالة', value: _order.status.arabicLabel),
+                  if (_order.status == OrderStatus.approved)
+                    _Row(label: 'مزامنة ERP', value: _erpSyncLabel),
                   _Row(
                     label: 'الفرع',
                     value: _order.assignedBranch ?? _order.branch ?? 'لا يوجد',
@@ -137,6 +139,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   bool get _canSubmitOrder {
     return _order.status == OrderStatus.draft ||
         _order.status == OrderStatus.returnedForEdit;
+  }
+
+  String get _erpSyncLabel {
+    if (_order.erpSalesOrder?.isNotEmpty == true) {
+      return 'تمت المزامنة';
+    }
+    if (_order.erpSyncStatus == 'failed') {
+      return 'فشلت المزامنة';
+    }
+    return 'جاهز للمزامنة';
   }
 
   double get _currentSubtotal {

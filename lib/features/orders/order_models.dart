@@ -14,7 +14,7 @@ enum OrderStatus {
       case OrderStatus.submitted:
         return 'مرسل للاعتماد';
       case OrderStatus.approved:
-        return 'معتمد';
+        return 'معتمد - جاهز للمزامنة';
       case OrderStatus.returnedForEdit:
         return 'معاد للتعديل';
       case OrderStatus.rejected:
@@ -60,6 +60,11 @@ class MadarOrder {
     this.itemsCount = 0,
     this.submittedAt,
     this.cancelledAt,
+    this.approvedAt,
+    this.approvedBy,
+    this.erpSyncStatus,
+    this.erpSyncError,
+    this.erpSalesOrder,
   });
 
   final String name;
@@ -74,6 +79,11 @@ class MadarOrder {
   final int itemsCount;
   final String? submittedAt;
   final String? cancelledAt;
+  final String? approvedAt;
+  final String? approvedBy;
+  final String? erpSyncStatus;
+  final String? erpSyncError;
+  final String? erpSalesOrder;
 
   factory MadarOrder.fromMap(Map<String, dynamic> map) {
     return MadarOrder(
@@ -89,6 +99,11 @@ class MadarOrder {
       itemsCount: _toInt(map['items_count']),
       submittedAt: map['submitted_at']?.toString(),
       cancelledAt: map['cancelled_at']?.toString(),
+      approvedAt: map['approved_at']?.toString(),
+      approvedBy: map['approved_by']?.toString(),
+      erpSyncStatus: map['erp_sync_status']?.toString(),
+      erpSyncError: map['erp_sync_error']?.toString(),
+      erpSalesOrder: map['erp_sales_order']?.toString(),
     );
   }
 

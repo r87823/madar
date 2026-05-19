@@ -21,9 +21,13 @@ ORDER_FIELDS = [
     "submitted_at",
     "cancelled_at",
     "approved_at",
+    "approved_by",
     "returned_at",
     "rejected_at",
     "approval_reason",
+    "erp_sync_status",
+    "erp_sync_error",
+    "erp_sales_order",
     "creation",
     "modified",
 ]
@@ -209,6 +213,10 @@ def _approval_transition(user, order_name, next_status, action, reason="", frapp
     doc.order_status = next_status
     if next_status == "approved":
         doc.approved_at = now
+        doc.approved_by = user
+        doc.erp_sync_status = "pending"
+        doc.erp_sync_error = None
+        doc.erp_sales_order = None
     elif next_status == "returned_for_edit":
         doc.returned_at = now
         doc.approval_reason = (reason or "").strip()
@@ -292,9 +300,13 @@ def _serialize_order(order):
         "submitted_at": _string_or_none(_get_value(order, "submitted_at")),
         "cancelled_at": _string_or_none(_get_value(order, "cancelled_at")),
         "approved_at": _string_or_none(_get_value(order, "approved_at")),
+        "approved_by": _get_value(order, "approved_by"),
         "returned_at": _string_or_none(_get_value(order, "returned_at")),
         "rejected_at": _string_or_none(_get_value(order, "rejected_at")),
         "approval_reason": _get_value(order, "approval_reason"),
+        "erp_sync_status": _get_value(order, "erp_sync_status"),
+        "erp_sync_error": _get_value(order, "erp_sync_error"),
+        "erp_sales_order": _get_value(order, "erp_sales_order"),
         "creation": _string_or_none(_get_value(order, "creation")),
         "modified": _string_or_none(_get_value(order, "modified")),
     }

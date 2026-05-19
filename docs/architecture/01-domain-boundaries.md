@@ -29,6 +29,8 @@ Madar may expose a safe product catalog bridge over ERPNext `Item`, but Flutter 
 
 R3-T03 adds branch supervisor approval decisions for submitted Madar orders. Approval, return-for-edit, and rejection remain Madar operational states only and must not create ERPNext Sales Orders or downstream stock/accounting documents.
 
+R3-T04 freezes approved Madar orders and introduces an internal ERP sync boundary. The boundary can validate an approved order and prepare a safe Sales Order-shaped payload, but it must not insert ERPNext `Sales Order` documents, mutate stock, create invoices, or post accounting entries. Actual ERPNext synchronization remains a later explicit server-side task.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

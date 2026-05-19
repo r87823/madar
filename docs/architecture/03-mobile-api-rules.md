@@ -133,6 +133,8 @@ Order item mutation APIs derive unit price, line total, subtotal, item count, ac
 
 Approval actions are also Madar-only. Flutter sends only the order name and the decision reason when required; Madar validates permission, branch scope, current status, and audit comments server-side.
 
+Approved orders may include ERP sync metadata such as `erp_sync_status`, `erp_sync_error`, and `erp_sales_order` in safe order responses. Flutter may display this metadata as read-only context, but it must not expose ERP sync actions. R3-T04 sync helpers are internal service methods only and do not create ERPNext Sales Orders.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

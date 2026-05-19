@@ -8,7 +8,9 @@ import 'package:madar/core/api/frappe_api_client.dart';
 import 'package:madar/core/auth/session_store.dart';
 import 'package:madar/core/auth/user_context.dart';
 import 'package:madar/features/dashboard/dashboard_screen.dart';
+import 'package:madar/features/orders/order_detail_screen.dart';
 import 'package:madar/features/orders/order_list_screen.dart';
+import 'package:madar/features/orders/order_models.dart';
 
 void main() {
   testWidgets('orders dashboard card opens orders flow', (tester) async {
@@ -65,6 +67,36 @@ void main() {
     expect(find.text('عميل'), findsOneWidget);
     expect(find.text('مسودة'), findsOneWidget);
   });
+
+  testWidgets('approved order detail is read-only and shows sync readiness', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: OrderDetailScreen(
+            apiClient: _approvedOrderClient(),
+            initialOrder: const MadarOrder(
+              name: 'MADAR-ORD-APPROVED',
+              customerName: 'عميل معتمد',
+              customerPhone: '0500000000',
+              status: OrderStatus.approved,
+              erpSyncStatus: 'pending',
+              itemsCount: 1,
+              subtotal: 12.5,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('معتمد - جاهز للمزامنة'), findsOneWidget);
+    expect(find.text('جاهز للمزامنة'), findsOneWidget);
+    expect(find.text('إضافة صنف'), findsNothing);
+    expect(find.text('إرسال الطلب'), findsNothing);
+  });
 }
 
 FrappeApiClient _ordersClient() {
@@ -90,6 +122,39 @@ FrappeApiClient _ordersClient() {
                     'notes': '',
                   },
                 ],
+              },
+              'error': null,
+            },
+          }),
+        ),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    }),
+  );
+}
+
+FrappeApiClient _approvedOrderClient() {
+  return FrappeApiClient(
+    baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+    sessionStore: MemorySessionStore(sid: 'abc123'),
+    httpClient: MockClient((request) async {
+      return http.Response.bytes(
+        utf8.encode(
+          jsonEncode({
+            'message': {
+              'ok': true,
+              'data': {
+                'order': {
+                  'name': 'MADAR-ORD-APPROVED',
+                  'customer_name': 'عميل معتمد',
+                  'customer_phone': '0500000000',
+                  'order_status': 'approved',
+                  'erp_sync_status': 'pending',
+                  'subtotal': 12.5,
+                  'items_count': 1,
+                },
+                'items': [],
               },
               'error': null,
             },

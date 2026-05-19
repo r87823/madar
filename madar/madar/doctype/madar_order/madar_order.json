@@ -18,10 +18,14 @@
     "items_count",
     "submitted_at",
     "approved_at",
+    "approved_by",
     "returned_at",
     "rejected_at",
     "cancelled_at",
-    "approval_reason"
+    "approval_reason",
+    "erp_sync_status",
+    "erp_sync_error",
+    "erp_sales_order"
   ],
   "fields": [
     {
@@ -104,6 +108,12 @@
       "read_only": 1
     },
     {
+      "fieldname": "approved_by",
+      "fieldtype": "Data",
+      "label": "Approved By",
+      "read_only": 1
+    },
+    {
       "fieldname": "returned_at",
       "fieldtype": "Datetime",
       "label": "Returned At",
@@ -125,6 +135,25 @@
       "fieldname": "approval_reason",
       "fieldtype": "Small Text",
       "label": "Approval Reason",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_sync_status",
+      "fieldtype": "Select",
+      "label": "ERP Sync Status",
+      "options": "\npending\nsynced\nfailed",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_sync_error",
+      "fieldtype": "Small Text",
+      "label": "ERP Sync Error",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_sales_order",
+      "fieldtype": "Data",
+      "label": "ERP Sales Order",
       "read_only": 1
     }
   ],
