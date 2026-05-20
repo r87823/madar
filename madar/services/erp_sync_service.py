@@ -1,5 +1,6 @@
 from madar.permissions.checks import has_permission
 from madar.services import order_service
+from madar.services import notification_service
 
 
 ITEM_FIELDS = ["item_code", "qty", "unit_price"]
@@ -250,6 +251,7 @@ def mark_sync_failed(order_name, error, frappe_module=None):
     order.erp_sync_error = (error or "").strip()
     order.save(ignore_permissions=True)
     _audit(order, "mark_sync_failed")
+    _notify_erp_sync_failed("Madar Order", order_name, frappe_module)
     _commit(frappe_module)
     return _ok(order_service._serialize_order(order))
 
@@ -435,8 +437,25 @@ def mark_invoice_sync_failed(order_name, error, frappe_module=None):
     order.erp_invoice_sync_error = (error or "").strip()
     order.save(ignore_permissions=True)
     _audit(order, "mark_invoice_sync_failed")
+    _notify_erp_sync_failed("Sales Invoice", order_name, frappe_module)
     _commit(frappe_module)
     return _ok(_serialize_sync_order(order))
+
+
+def _notify_erp_sync_failed(entity_type, entity_name, frappe_module):
+    notification_service.safe_notify_users(
+        notification_service.users_with_permission(
+            SYNC_PERMISSION,
+            frappe_module=frappe_module,
+        ),
+        title="فشل في مزامنة ERP",
+        message=f"فشلت مزامنة {entity_type} {entity_name}. يرجى المراجعة.",
+        event_type="erp_sync_failed",
+        entity_type=entity_type,
+        entity_name=entity_name,
+        priority="high",
+        frappe_module=frappe_module,
+    )
 
 
 def _get_order(order_name, frappe_module):

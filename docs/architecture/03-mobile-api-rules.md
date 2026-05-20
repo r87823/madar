@@ -201,6 +201,25 @@ R6-T06 adds final accounting submit endpoints:
 
 Flutter must show a confirmation dialog before final submit actions because ERPNext may post GL entries when documents are submitted. Flutter must not send ERPNext document fields, allocation details, GL data, Delivery Note data, Stock Entry data, or docstatus values. Madar derives the ERP Sales Invoice and Payment Entry records from the Madar order and linked Madar payments.
 
+## Notification Endpoints
+
+R7-T01 exposes authenticated in-app notification endpoints:
+
+```text
+/api/method/madar.api.notifications.list_notifications
+/api/method/madar.api.notifications.get_unread_count
+/api/method/madar.api.notifications.mark_notification_read
+/api/method/madar.api.notifications.mark_all_notifications_read
+```
+
+These endpoints return only notifications for the authenticated user. Flutter must not call Frappe `/api/resource/Madar Notification` directly, must not request another user's notifications, and must not treat notifications as authorization. They are display hints only; backend permissions remain the source of truth.
+
+Notification endpoint errors also use:
+
+- `NOTIFICATION_NOT_FOUND`.
+- `NOTIFICATION_CREATE_FAILED`.
+- `RECIPIENT_REQUIRED`.
+
 ## Production Mapping Endpoints
 
 R4-T01 exposes Madar-only production mapping endpoints:

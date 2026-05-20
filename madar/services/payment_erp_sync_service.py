@@ -1,4 +1,5 @@
 from madar.permissions.checks import has_permission
+from madar.services import notification_service
 
 
 SYNC_PERMISSION = "accounting.view_sync_logs"
@@ -218,8 +219,25 @@ def mark_payment_sync_failed(payment_name, error, frappe_module=None):
     payment.erp_sync_error = (error or "").strip()[:200]
     payment.save(ignore_permissions=True)
     _audit(payment, "mark_payment_sync_failed")
+    _notify_payment_sync_failed(payment_name, frappe_module)
     _commit(frappe_module)
     return _ok(_serialize_payment(payment, frappe_module))
+
+
+def _notify_payment_sync_failed(payment_name, frappe_module):
+    notification_service.safe_notify_users(
+        notification_service.users_with_permission(
+            SYNC_PERMISSION,
+            frappe_module=frappe_module,
+        ),
+        title="فشل في مزامنة ERP",
+        message=f"فشلت مزامنة Madar Payment {payment_name}. يرجى المراجعة.",
+        event_type="erp_sync_failed",
+        entity_type="Madar Payment",
+        entity_name=payment_name,
+        priority="high",
+        frappe_module=frappe_module,
+    )
 
 
 def _validate_payment(payment):

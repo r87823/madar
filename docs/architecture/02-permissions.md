@@ -112,6 +112,17 @@ For regular users, scope values come from safe Employee context fields. For user
 
 Future order, delivery, payment, cashbox, production, approval, notification, attendance, and leave workflows should consume permission keys and scope helpers instead of checking Frappe roles directly.
 
+## Notification Access
+
+R7-T01 introduces `Madar Notification` as a user-scoped operational alert DocType. Notification APIs are authenticated and scoped to the current user:
+
+- Any authenticated user may list their own notifications.
+- Any authenticated user may get their own unread count.
+- Any authenticated user may mark their own notification, or all own notifications, as read.
+- A user must not read or mutate another user's notifications through the mobile APIs.
+
+Notification recipient lookup for workflow events should use permission-key helpers where possible. For example, approval notifications target users with `orders.approve`, production notifications target users with `production.view_work_orders`, and accounting sync failure notifications target users with `accounting.view_sync_logs`. Endpoint code must not branch on raw role names.
+
 ## Order Draft Permissions and Scopes
 
 R3-T01 introduces `Madar Order` as a Madar-owned operational document. Order APIs must use permission keys and scope helpers:

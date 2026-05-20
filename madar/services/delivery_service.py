@@ -1,5 +1,6 @@
 from madar.permissions.checks import get_permissions_for_roles, has_permission
 from madar.permissions.scopes import get_context_scopes
+from madar.services import notification_service
 from madar.services.employee_context import get_employee_context
 
 
@@ -199,6 +200,16 @@ def assign_driver(user, batch_name, driver_user, frappe_module=None):
     batch.status = "assigned"
     batch.save(ignore_permissions=True)
     _audit(batch, "assign_driver", user, frappe_module)
+    notification_service.safe_notify_user(
+        driver_user.strip(),
+        title="تم إسناد دفعة توصيل",
+        message=f"تم إسناد الدفعة {_get_value(batch, 'name')} إليك.",
+        event_type="delivery_batch_assigned",
+        entity_type="Madar Delivery Batch",
+        entity_name=_get_value(batch, "name"),
+        priority="normal",
+        frappe_module=frappe_module,
+    )
     _commit(frappe_module)
     return _ok(_serialize_batch(batch, frappe_module))
 
@@ -435,8 +446,29 @@ def _batch_transition(
             return cascade_error
 
     _audit(batch, action, user, frappe_module, reason=reason)
+    if action == "mark_batch_delivered" and _get_value(batch, "batch_type") == BATCH_TYPE_BRANCH_TRANSFER:
+        _notify_branch_transfer_received(batch, frappe_module)
     _commit(frappe_module)
     return _ok(_serialize_batch(batch, frappe_module))
+
+
+def _notify_branch_transfer_received(batch, frappe_module):
+    recipients = notification_service.users_with_permission(
+        BRANCH_PERMISSION,
+        frappe_module=frappe_module,
+    )
+    for order in _orders_for_batch(frappe_module, _get_value(batch, "name")):
+        order_name = _get_value(order, "name")
+        notification_service.safe_notify_users(
+            recipients,
+            title="طلب وصل إلى الفرع",
+            message=f"وصل الطلب {order_name} إلى الفرع.",
+            event_type="branch_order_received",
+            entity_type="Madar Order",
+            entity_name=order_name,
+            priority="normal",
+            frappe_module=frappe_module,
+        )
 
 
 def _cascade_batch_status(batch, next_status, user, frappe_module, reason=""):

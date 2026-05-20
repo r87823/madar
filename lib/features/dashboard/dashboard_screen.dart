@@ -14,6 +14,8 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenErpSyncReview,
     required this.onOpenProductionMappings,
     required this.onOpenWorkOrders,
+    this.unreadNotifications = 0,
+    this.onOpenNotifications,
     this.onOpenDispatchQueue,
     this.onOpenMyDeliveryBatches,
     this.onOpenCashbox,
@@ -28,6 +30,8 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenErpSyncReview;
   final VoidCallback onOpenProductionMappings;
   final VoidCallback onOpenWorkOrders;
+  final int unreadNotifications;
+  final VoidCallback? onOpenNotifications;
   final VoidCallback? onOpenDispatchQueue;
   final VoidCallback? onOpenMyDeliveryBatches;
   final VoidCallback? onOpenCashbox;
@@ -41,6 +45,10 @@ class DashboardScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('لوحة مدار'),
         actions: [
+          _NotificationIcon(
+            unreadCount: unreadNotifications,
+            onPressed: onOpenNotifications,
+          ),
           IconButton(
             tooltip: 'تسجيل الخروج',
             onPressed: onLogout,
@@ -124,6 +132,48 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NotificationIcon extends StatelessWidget {
+  const _NotificationIcon({required this.unreadCount, required this.onPressed});
+
+  final int unreadCount;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        IconButton(
+          tooltip: 'الإشعارات',
+          onPressed: onPressed,
+          icon: const Icon(Icons.notifications_outlined),
+        ),
+        if (unreadCount > 0)
+          PositionedDirectional(
+            top: 6,
+            end: 6,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                unreadCount > 99 ? '99+' : '$unreadCount',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onError,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -13,6 +13,7 @@ import '../features/orders/approval_queue_screen.dart';
 import '../features/orders/order_list_screen.dart';
 import '../features/production/production_mapping_screen.dart';
 import '../features/production/work_order_list_screen.dart';
+import '../features/notifications/notification_screen.dart';
 
 class MadarApp extends StatefulWidget {
   const MadarApp({super.key});
@@ -24,6 +25,7 @@ class MadarApp extends StatefulWidget {
 class _MadarAppState extends State<MadarApp> {
   late final AuthController _authController;
   late final FrappeApiClient _apiClient;
+  int _unreadNotifications = 0;
 
   @override
   void initState() {
@@ -74,8 +76,18 @@ class _MadarAppState extends State<MadarApp> {
           if (currentContext == null) {
             return LoginScreen(controller: _authController);
           }
+          _refreshUnreadNotifications();
           return DashboardScreen(
             context: currentContext,
+            unreadNotifications: _unreadNotifications,
+            onOpenNotifications: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => NotificationScreen(apiClient: _apiClient),
+                ),
+              );
+              _refreshUnreadNotifications();
+            },
             onLogout: _authController.logout,
             onOpenAttendance: () {
               Navigator.of(context).push(
@@ -155,5 +167,17 @@ class _MadarAppState extends State<MadarApp> {
         },
       ),
     );
+  }
+
+  Future<void> _refreshUnreadNotifications() async {
+    if (_authController.context == null) return;
+    try {
+      final count = await _apiClient.getUnreadNotificationCount();
+      if (mounted && count.unreadCount != _unreadNotifications) {
+        setState(() => _unreadNotifications = count.unreadCount);
+      }
+    } catch (_) {
+      // Notification count is non-critical for the dashboard.
+    }
   }
 }

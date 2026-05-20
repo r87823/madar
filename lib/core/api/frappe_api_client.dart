@@ -16,6 +16,7 @@ import '../../features/orders/order_models.dart';
 import '../../features/payments/payment_models.dart';
 import '../../features/production/production_mapping_models.dart';
 import '../../features/production/work_order_models.dart';
+import '../../features/notifications/notification_models.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -60,6 +61,43 @@ class FrappeApiClient {
   Future<void> logout() async {
     await _httpClient.get(_methodUri('logout'), headers: _headers());
     await _sessionStore.clear();
+  }
+
+  Future<NotificationList> listNotifications() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.notifications.list_notifications'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل الإشعارات');
+    return NotificationList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<NotificationUnreadCount> getUnreadNotificationCount() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.notifications.get_unread_count'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل عدد الإشعارات');
+    return NotificationUnreadCount.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarNotification> markNotificationRead(String notificationName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.notifications.mark_notification_read'),
+      headers: _headers(),
+      body: {'notification_name': notificationName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحديد الإشعار كمقروء');
+    final data = _safeEnvelope(response)['data'];
+    return MadarNotification.fromMap(_map(data));
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.notifications.mark_all_notifications_read'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحديد الإشعارات كمقروءة');
   }
 
   Future<AttendanceStatus> getAttendanceStatus() async {

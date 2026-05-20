@@ -1,4 +1,5 @@
 from madar.permissions.checks import get_permissions_for_roles, has_permission
+from madar.services import notification_service
 
 
 VIEW_OWN_PERMISSION = "cashbox.view_own"
@@ -209,6 +210,16 @@ def return_cashbox(user, cashbox_name, reason, frappe_module=None):
     cashbox.return_reason = reason.strip()
     cashbox.save(ignore_permissions=True)
     _audit(cashbox, "return_cashbox", user, frappe_module)
+    notification_service.safe_notify_user(
+        _get_value(cashbox, "user"),
+        title="تم إرجاع الصندوق",
+        message=f"تم إرجاع الصندوق للمراجعة. السبب: {reason.strip()}",
+        event_type="cashbox_returned",
+        entity_type="Madar Cashbox",
+        entity_name=_get_value(cashbox, "name"),
+        priority="high",
+        frappe_module=frappe_module,
+    )
     _commit(frappe_module)
     return _ok(_serialize_cashbox(cashbox, frappe_module))
 

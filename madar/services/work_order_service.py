@@ -3,6 +3,7 @@ from madar.permissions.scopes import get_context_scopes
 from madar.services.employee_context import get_employee_context
 from madar.services import production_mapping_service
 from madar.services import delivery_service
+from madar.services import notification_service
 
 
 CREATE_PERMISSION = "production.manage_mappings"
@@ -109,6 +110,19 @@ def create_work_orders_from_order(user, order_name, frappe_module=None):
             ).insert(ignore_permissions=True)
         created.append(work_order)
     recalculate_order_production_status(order_name, frappe_module=frappe_module)
+    notification_service.safe_notify_users(
+        notification_service.users_with_permission(
+            VIEW_PERMISSION,
+            frappe_module=frappe_module,
+        ),
+        title="أوامر إنتاج جديدة",
+        message=f"تم إنشاء أوامر إنتاج للطلب {order_name}.",
+        event_type="work_orders_created",
+        entity_type="Madar Order",
+        entity_name=order_name,
+        priority="normal",
+        frappe_module=frappe_module,
+    )
     _commit(frappe_module)
     return _ok({"items": [_serialize_work_order(row) for row in created]})
 

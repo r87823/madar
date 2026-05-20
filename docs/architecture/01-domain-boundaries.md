@@ -89,6 +89,14 @@ This phase is the first workflow that may create ERPNext GL Entries through stan
 
 R6-T06 must not create Delivery Notes, Stock Entries, refunds, cancellations, credit notes, or background auto-submit jobs. It must not silently modify submitted ERP documents.
 
+### Internal Notifications
+
+R7-T01 adds `Madar Notification` as a Madar-owned in-app notification record. Notifications are operational user alerts for Madar workflows only. They are not ERPNext Communication records and do not send email, SMS, WhatsApp, push notifications, or websocket events.
+
+Notification titles and messages shown to users are Arabic-first. Internal `event_type` values may remain English for code stability. Notification creation is best-effort: a notification failure must not roll back order, approval, production, delivery, cashbox, or ERP sync workflows.
+
+Flutter reads notifications only through Madar APIs and may show unread counts, notification lists, and mark-read actions. Users can see and update only their own notifications.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

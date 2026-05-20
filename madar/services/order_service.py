@@ -1,5 +1,6 @@
 from madar.permissions.checks import get_permissions_for_roles, has_permission
 from madar.permissions.scopes import get_context_scopes
+from madar.services import notification_service
 from madar.services.employee_context import get_employee_context
 
 
@@ -185,6 +186,7 @@ def submit_order(user, order_name, frappe_module=None):
     doc.submitted_at = now
     doc.save(ignore_permissions=True)
     _audit(doc, "submit_order", user, now)
+    _notify_order_submitted(doc, frappe_module)
     frappe_module.db.commit()
     return _ok(_serialize_order(doc))
 
@@ -309,8 +311,78 @@ def _approval_transition(user, order_name, next_status, action, reason="", frapp
         doc.approval_reason = (reason or "").strip()
     doc.save(ignore_permissions=True)
     _audit(doc, action, user, now, reason=reason)
+    _notify_approval_transition(doc, next_status, reason, frappe_module)
     frappe_module.db.commit()
     return _ok(_serialize_order(doc))
+
+
+def _notify_order_submitted(order, frappe_module):
+    order_name = _get_value(order, "name")
+    recipients = notification_service.users_with_permission(
+        APPROVE_PERMISSION,
+        frappe_module=frappe_module,
+    )
+    notification_service.safe_notify_users(
+        recipients,
+        title="طلب جديد بانتظار الاعتماد",
+        message=f"تم إرسال الطلب {order_name} للاعتماد.",
+        event_type="order_submitted",
+        entity_type="Madar Order",
+        entity_name=order_name,
+        priority="normal",
+        frappe_module=frappe_module,
+    )
+
+
+def _notify_approval_transition(order, next_status, reason, frappe_module):
+    order_name = _get_value(order, "name")
+    creator = _get_value(order, "created_by_user")
+    if next_status == "returned_for_edit":
+        notification_service.safe_notify_user(
+            creator,
+            title="تم إرجاع الطلب للتعديل",
+            message=f"تم إرجاع الطلب {order_name} للتعديل. السبب: {(reason or '').strip()}",
+            event_type="order_returned_for_edit",
+            entity_type="Madar Order",
+            entity_name=order_name,
+            priority="normal",
+            frappe_module=frappe_module,
+        )
+    elif next_status == "rejected":
+        notification_service.safe_notify_user(
+            creator,
+            title="تم رفض الطلب",
+            message=f"تم رفض الطلب {order_name}. السبب: {(reason or '').strip()}",
+            event_type="order_rejected",
+            entity_type="Madar Order",
+            entity_name=order_name,
+            priority="high",
+            frappe_module=frappe_module,
+        )
+    elif next_status == "approved":
+        notification_service.safe_notify_user(
+            creator,
+            title="تم اعتماد الطلب",
+            message=f"تم اعتماد الطلب {order_name}.",
+            event_type="order_approved",
+            entity_type="Madar Order",
+            entity_name=order_name,
+            priority="normal",
+            frappe_module=frappe_module,
+        )
+        notification_service.safe_notify_users(
+            notification_service.users_with_permission(
+                "production.view_work_orders",
+                frappe_module=frappe_module,
+            ),
+            title="تم اعتماد الطلب",
+            message=f"تم اعتماد الطلب {order_name}.",
+            event_type="order_approved",
+            entity_type="Madar Order",
+            entity_name=order_name,
+            priority="normal",
+            frappe_module=frappe_module,
+        )
 
 
 def _get_scoped_order(user, order_name, permissions, frappe_module):
