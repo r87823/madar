@@ -38,6 +38,11 @@ class DashboardCards {
       },
     ),
     DashboardCardDefinition(
+      title: 'الإعدادات',
+      icon: Icons.settings_outlined,
+      requiredAny: {'system.full_access', 'settings.manage'},
+    ),
+    DashboardCardDefinition(
       title: 'الحضور والانصراف',
       icon: Icons.schedule,
       requiredAny: {'attendance.check_in', 'attendance.check_out'},

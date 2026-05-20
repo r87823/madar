@@ -262,6 +262,20 @@ These endpoints require authentication and return only paginated safe columns, s
 
 Report endpoints must not create or mutate Madar business documents, ERPNext Delivery Notes, Stock Entries, Sales Invoices, Payment Entries, GL Entries, or export files. ERP sync error reports must expose safe error messages only, never raw tracebacks or secrets.
 
+## Admin Settings Endpoints
+
+R9-T01 exposes non-secret admin settings endpoints:
+
+```text
+/api/method/madar.api.settings.get_settings
+/api/method/madar.api.settings.get_setting_metadata
+/api/method/madar.api.settings.update_setting
+```
+
+These endpoints require `system.full_access` or `settings.manage`. Flutter must not send or display passwords, API keys, ERP credentials, database credentials, SSH credentials, payment gateway secrets, or any secret setting. Any `Madar Setting` row marked `is_secret=1` must not be returned to Flutter.
+
+The settings UI is Arabic-first, while `setting_key` values remain stable English identifiers. Updating settings is the only mutation allowed in R9-T01; it must not create ERPNext Delivery Notes, Stock Entries, Sales Invoices, Payment Entries, GL Entries, users, roles, or workflow documents.
+
 ## Production Mapping Endpoints
 
 R4-T01 exposes Madar-only production mapping endpoints:

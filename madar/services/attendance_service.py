@@ -91,7 +91,7 @@ def _create_checkin(user, log_type, permission_key, frappe_module=None):
 
     now = _server_now(frappe_module)
     duplicate = _get_recent_same_log(frappe_module, employee["name"], log_type)
-    if duplicate and _within_duplicate_window(_get_value(duplicate, "time"), now):
+    if duplicate and _within_duplicate_window(_get_value(duplicate, "time"), now, frappe_module):
         return _error("DUPLICATE_CHECKIN", "تم تسجيل نفس الحركة قبل لحظات.")
 
     last_checkin = _get_last_checkin(frappe_module, employee["name"])
@@ -165,10 +165,24 @@ def _get_recent_same_log(frappe_module, employee_name, log_type):
     return latest
 
 
-def _within_duplicate_window(previous_time, now):
+def _within_duplicate_window(previous_time, now, frappe_module=None):
     if not isinstance(previous_time, datetime):
         return False
-    return 0 <= (now - previous_time).total_seconds() <= DUPLICATE_WINDOW_SECONDS
+    return 0 <= (now - previous_time).total_seconds() <= _duplicate_window_seconds(frappe_module)
+
+
+def _duplicate_window_seconds(frappe_module):
+    try:
+        from madar.services import settings_service
+
+        return int(
+            settings_service.get_setting_value(
+                "attendance.duplicate_window_seconds",
+                frappe_module=frappe_module,
+            )
+        )
+    except Exception:
+        return DUPLICATE_WINDOW_SECONDS
 
 
 def _server_now(frappe_module):

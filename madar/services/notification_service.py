@@ -42,6 +42,9 @@ def notify_user(
     if frappe_module is None:
         import frappe as frappe_module
 
+    if not _notifications_enabled(frappe_module):
+        return _ok({"skipped": True, "reason": "notifications_disabled"})
+
     recipient_user = (recipient_user or "").strip()
     if not recipient_user:
         return _error("RECIPIENT_REQUIRED", "مستلم الإشعار مطلوب.")
@@ -305,6 +308,15 @@ def _log_notification_error(frappe_module, exc):
             return
     if hasattr(frappe_module, "log_error"):
         frappe_module.log_error(title="NOTIFICATION_CREATE_FAILED", message=str(exc)[:500])
+
+
+def _notifications_enabled(frappe_module):
+    try:
+        from madar.services import settings_service
+
+        return bool(settings_service.get_setting_value("notifications.enabled", frappe_module=frappe_module))
+    except Exception:
+        return True
 
 
 def _server_now(frappe_module):

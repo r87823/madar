@@ -19,6 +19,7 @@ import '../../features/production/work_order_models.dart';
 import '../../features/notifications/notification_models.dart';
 import '../../features/followup_dashboard/followup_dashboard_models.dart';
 import '../../features/reports/reports_models.dart';
+import '../../features/settings/settings_models.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -124,6 +125,26 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر تحميل التقرير');
     return ReportResult.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<SettingsList> getSettings() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.settings.get_settings'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل الإعدادات');
+    return SettingsList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<MadarSetting> updateSetting(String settingKey, Object value) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.settings.update_setting'),
+      headers: _headers(),
+      body: {'setting_key': settingKey, 'value': jsonEncode(value)},
+    );
+    _throwIfFailed(response, fallback: 'تعذر حفظ الإعداد');
+    final data = _safeEnvelope(response)['data'];
+    return MadarSetting.fromMap(_map(data));
   }
 
   Future<AttendanceStatus> getAttendanceStatus() async {

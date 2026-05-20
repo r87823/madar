@@ -30,6 +30,7 @@ ALL_PERMISSION_KEYS = [
     "cashbox.review",
     "accounting.view_sync_logs",
     "accounting.finalize",
+    "settings.manage",
 ]
 
 

@@ -65,7 +65,7 @@ def collect_payment(
     amount = _float(amount)
     if amount <= 0:
         return _error("PAYMENT_AMOUNT_INVALID", "مبلغ الدفع يجب أن يكون أكبر من صفر.")
-    if payment_method not in PAYMENT_METHODS:
+    if payment_method not in _enabled_payment_methods(frappe_module):
         return _error("PAYMENT_METHOD_INVALID", "طريقة الدفع غير مدعومة.")
 
     order = _get_order(frappe_module, order_name)
@@ -80,7 +80,7 @@ def collect_payment(
 
     _recalculate_order_payment_summary(order, frappe_module)
     remaining = _float(_get_value(order, "remaining_amount"))
-    if amount > remaining:
+    if amount > remaining and not _allow_overpayment(frappe_module):
         return _error("PAYMENT_EXCEEDS_REMAINING_AMOUNT", "مبلغ الدفع يتجاوز المتبقي على الطلب.")
 
     payment = frappe_module.get_doc(
@@ -255,6 +255,25 @@ def _user_permissions(user, frappe_module):
 
 def _has_full_access(permissions):
     return FULL_ACCESS_PERMISSION in set(permissions or [])
+
+
+def _allow_overpayment(frappe_module):
+    try:
+        from madar.services import settings_service
+
+        return bool(settings_service.get_setting_value("payments.allow_overpayment", frappe_module=frappe_module))
+    except Exception:
+        return False
+
+
+def _enabled_payment_methods(frappe_module):
+    try:
+        from madar.services import settings_service
+
+        methods = settings_service.get_setting_value("payments.enabled_methods", frappe_module=frappe_module)
+        return set(methods or PAYMENT_METHODS).intersection(PAYMENT_METHODS)
+    except Exception:
+        return PAYMENT_METHODS
 
 
 def _serialize_payment(payment):

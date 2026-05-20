@@ -1,0 +1,112 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "field:setting_key",
+  "creation": "2026-05-20 00:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "setting_key",
+    "setting_value",
+    "value_type",
+    "category",
+    "label_ar",
+    "description_ar",
+    "is_secret",
+    "is_editable",
+    "updated_by",
+    "updated_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "setting_key",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Setting Key",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "setting_value",
+      "fieldtype": "Long Text",
+      "label": "Setting Value"
+    },
+    {
+      "fieldname": "value_type",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Value Type",
+      "options": "string\nint\nbool\njson",
+      "reqd": 1
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Category",
+      "reqd": 1
+    },
+    {
+      "fieldname": "label_ar",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Arabic Label",
+      "reqd": 1
+    },
+    {
+      "fieldname": "description_ar",
+      "fieldtype": "Small Text",
+      "label": "Arabic Description"
+    },
+    {
+      "default": "0",
+      "fieldname": "is_secret",
+      "fieldtype": "Check",
+      "label": "Is Secret"
+    },
+    {
+      "default": "1",
+      "fieldname": "is_editable",
+      "fieldtype": "Check",
+      "label": "Is Editable"
+    },
+    {
+      "fieldname": "updated_by",
+      "fieldtype": "Data",
+      "label": "Updated By",
+      "read_only": 1
+    },
+    {
+      "fieldname": "updated_at",
+      "fieldtype": "Datetime",
+      "label": "Updated At",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 0,
+  "links": [],
+  "modified": "2026-05-20 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Madar",
+  "name": "Madar Setting",
+  "naming_rule": "By fieldname",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 0,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "setting_key",
+  "sort_order": "ASC",
+  "states": []
+}

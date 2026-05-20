@@ -16,6 +16,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenWorkOrders,
     this.onOpenFollowupDashboard,
     this.onOpenReports,
+    this.onOpenSettings,
     this.unreadNotifications = 0,
     this.onOpenNotifications,
     this.onOpenDispatchQueue,
@@ -34,6 +35,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenWorkOrders;
   final VoidCallback? onOpenFollowupDashboard;
   final VoidCallback? onOpenReports;
+  final VoidCallback? onOpenSettings;
   final int unreadNotifications;
   final VoidCallback? onOpenNotifications;
   final VoidCallback? onOpenDispatchQueue;
@@ -128,6 +130,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenWorkOrders: onOpenWorkOrders,
                     onOpenFollowupDashboard: onOpenFollowupDashboard,
                     onOpenReports: onOpenReports,
+                    onOpenSettings: onOpenSettings,
                     onOpenDispatchQueue: onOpenDispatchQueue,
                     onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
                     onOpenCashbox: onOpenCashbox,
@@ -258,6 +261,7 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenWorkOrders,
     this.onOpenFollowupDashboard,
     this.onOpenReports,
+    this.onOpenSettings,
     this.onOpenDispatchQueue,
     this.onOpenMyDeliveryBatches,
     this.onOpenCashbox,
@@ -272,6 +276,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onOpenWorkOrders;
   final VoidCallback? onOpenFollowupDashboard;
   final VoidCallback? onOpenReports;
+  final VoidCallback? onOpenSettings;
   final VoidCallback? onOpenDispatchQueue;
   final VoidCallback? onOpenMyDeliveryBatches;
   final VoidCallback? onOpenCashbox;
@@ -291,6 +296,10 @@ class _DashboardCard extends StatelessWidget {
           }
           if (card.title == 'التقارير' && onOpenReports != null) {
             onOpenReports!();
+            return;
+          }
+          if (card.title == 'الإعدادات' && onOpenSettings != null) {
+            onOpenSettings!();
             return;
           }
           if (card.title == 'الحضور والانصراف') {
