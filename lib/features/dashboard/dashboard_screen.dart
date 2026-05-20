@@ -14,6 +14,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenErpSyncReview,
     required this.onOpenProductionMappings,
     required this.onOpenWorkOrders,
+    this.onOpenFollowupDashboard,
     this.unreadNotifications = 0,
     this.onOpenNotifications,
     this.onOpenDispatchQueue,
@@ -30,6 +31,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenErpSyncReview;
   final VoidCallback onOpenProductionMappings;
   final VoidCallback onOpenWorkOrders;
+  final VoidCallback? onOpenFollowupDashboard;
   final int unreadNotifications;
   final VoidCallback? onOpenNotifications;
   final VoidCallback? onOpenDispatchQueue;
@@ -122,6 +124,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenErpSyncReview: onOpenErpSyncReview,
                     onOpenProductionMappings: onOpenProductionMappings,
                     onOpenWorkOrders: onOpenWorkOrders,
+                    onOpenFollowupDashboard: onOpenFollowupDashboard,
                     onOpenDispatchQueue: onOpenDispatchQueue,
                     onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
                     onOpenCashbox: onOpenCashbox,
@@ -250,6 +253,7 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenErpSyncReview,
     required this.onOpenProductionMappings,
     required this.onOpenWorkOrders,
+    this.onOpenFollowupDashboard,
     this.onOpenDispatchQueue,
     this.onOpenMyDeliveryBatches,
     this.onOpenCashbox,
@@ -262,6 +266,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onOpenErpSyncReview;
   final VoidCallback onOpenProductionMappings;
   final VoidCallback onOpenWorkOrders;
+  final VoidCallback? onOpenFollowupDashboard;
   final VoidCallback? onOpenDispatchQueue;
   final VoidCallback? onOpenMyDeliveryBatches;
   final VoidCallback? onOpenCashbox;
@@ -274,6 +279,11 @@ class _DashboardCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () {
+          if (card.title == 'لوحة المتابعة' &&
+              onOpenFollowupDashboard != null) {
+            onOpenFollowupDashboard!();
+            return;
+          }
           if (card.title == 'الحضور والانصراف') {
             onOpenAttendance();
             return;

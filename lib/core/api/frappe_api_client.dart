@@ -17,6 +17,7 @@ import '../../features/payments/payment_models.dart';
 import '../../features/production/production_mapping_models.dart';
 import '../../features/production/work_order_models.dart';
 import '../../features/notifications/notification_models.dart';
+import '../../features/followup_dashboard/followup_dashboard_models.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -81,7 +82,9 @@ class FrappeApiClient {
     return NotificationUnreadCount.fromEnvelope(_safeEnvelope(response));
   }
 
-  Future<MadarNotification> markNotificationRead(String notificationName) async {
+  Future<MadarNotification> markNotificationRead(
+    String notificationName,
+  ) async {
     final response = await _httpClient.post(
       _methodUri('madar.api.notifications.mark_notification_read'),
       headers: _headers(),
@@ -98,6 +101,15 @@ class FrappeApiClient {
       headers: _headers(),
     );
     _throwIfFailed(response, fallback: 'تعذر تحديد الإشعارات كمقروءة');
+  }
+
+  Future<FollowupDashboardSummary> getFollowupDashboardSummary() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.followup_dashboard.get_summary'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل لوحة المتابعة');
+    return FollowupDashboardSummary.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<AttendanceStatus> getAttendanceStatus() async {

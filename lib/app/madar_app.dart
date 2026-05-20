@@ -10,6 +10,7 @@ import '../features/cashbox/cashbox_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/delivery/delivery_batch_list_screen.dart';
 import '../features/delivery/dispatch_queue_screen.dart';
+import '../features/followup_dashboard/followup_dashboard_screen.dart';
 import '../features/orders/approval_queue_screen.dart';
 import '../features/orders/order_detail_screen.dart';
 import '../features/orders/order_list_screen.dart';
@@ -90,11 +91,30 @@ class _MadarAppState extends State<MadarApp> {
                   builder: (_) => NotificationScreen(
                     apiClient: _apiClient,
                     onOpenNotification: (notification) =>
-                        _openNotificationTarget(context, currentContext, notification),
+                        _openNotificationTarget(
+                          context,
+                          currentContext,
+                          notification,
+                        ),
                   ),
                 ),
               );
               _refreshUnreadNotifications();
+            },
+            onOpenFollowupDashboard: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => FollowupDashboardScreen(
+                    apiClient: _apiClient,
+                    onOpenRoute: (routeKey, routeParams) => _openRouteTarget(
+                      context,
+                      currentContext,
+                      routeKey,
+                      routeParams,
+                    ),
+                  ),
+                ),
+              );
             },
             onLogout: _authController.logout,
             onOpenAttendance: () {
@@ -194,10 +214,35 @@ class _MadarAppState extends State<MadarApp> {
     UserContext currentContext,
     MadarNotification notification,
   ) async {
+    return _openRouteTarget(
+      context,
+      currentContext,
+      notification.routeKey,
+      notification.routeParams,
+    );
+  }
+
+  Future<bool> _openRouteTarget(
+    BuildContext context,
+    UserContext currentContext,
+    String routeKey,
+    Map<String, String> routeParams,
+  ) async {
     try {
-      switch (notification.routeKey) {
+      switch (routeKey) {
+        case 'orders_list':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => OrderListScreen(
+                apiClient: _apiClient,
+                userContext: currentContext,
+              ),
+            ),
+          );
+          return true;
         case 'order_detail':
-          final orderName = notification.routeParams['order_name'] ?? '';
+          final orderName = routeParams['order_name'] ?? '';
           if (orderName.isEmpty) return false;
           final order = await _apiClient.getOrder(orderName);
           if (!context.mounted) return false;
@@ -230,7 +275,7 @@ class _MadarAppState extends State<MadarApp> {
           );
           return true;
         case 'work_order_detail':
-          final workOrderName = notification.routeParams['work_order'] ?? '';
+          final workOrderName = routeParams['work_order'] ?? '';
           if (workOrderName.isEmpty) return false;
           final workOrder = await _apiClient.getWorkOrder(workOrderName);
           if (!context.mounted) return false;
@@ -244,7 +289,7 @@ class _MadarAppState extends State<MadarApp> {
           );
           return true;
         case 'delivery_batch_detail':
-          final batchName = notification.routeParams['batch_name'] ?? '';
+          final batchName = routeParams['batch_name'] ?? '';
           if (batchName.isEmpty) return false;
           if (!context.mounted) return false;
           await Navigator.of(context).push(
@@ -264,6 +309,14 @@ class _MadarAppState extends State<MadarApp> {
             ),
           );
           return true;
+        case 'dispatch_queue':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DispatchQueueScreen(apiClient: _apiClient),
+            ),
+          );
+          return true;
         case 'cashbox_detail':
         case 'cashbox_review':
           if (!context.mounted) return false;
@@ -277,6 +330,7 @@ class _MadarAppState extends State<MadarApp> {
           );
           return true;
         case 'accounting_review_order':
+        case 'accounting_review':
         case 'erp_sync_review':
           if (!context.mounted) return false;
           await Navigator.of(context).push(
@@ -284,6 +338,21 @@ class _MadarAppState extends State<MadarApp> {
               builder: (_) => ErpSyncReviewScreen(
                 apiClient: _apiClient,
                 permissions: currentContext.permissions,
+              ),
+            ),
+          );
+          return true;
+        case 'notifications':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => NotificationScreen(
+                apiClient: _apiClient,
+                onOpenNotification: (notification) => _openNotificationTarget(
+                  context,
+                  currentContext,
+                  notification,
+                ),
               ),
             ),
           );

@@ -233,6 +233,18 @@ Notification endpoint errors also use:
 - `NOTIFICATION_CREATE_FAILED`.
 - `RECIPIENT_REQUIRED`.
 
+## Follow-up Dashboard Endpoint
+
+R8-T01 exposes the read-only operational follow-up dashboard endpoint:
+
+```text
+/api/method/madar.api.followup_dashboard.get_summary
+```
+
+This endpoint requires authentication and returns Arabic-first summary cards and alerts based on the current user's Madar permission keys and scopes. It returns counts only and must not expose raw document lists, ERP tracebacks, sensitive payment details, private HR data, secrets, passwords, or session internals.
+
+Flutter may use dashboard `route_key` values to navigate to already implemented Madar screens. The route metadata is only a UI hint; destination APIs remain responsible for authorization and scope checks. The dashboard must not create or mutate Madar records, ERPNext Delivery Notes, Stock Entries, Sales Invoices, Payment Entries, GL Entries, or any accounting/stock document.
+
 ## Production Mapping Endpoints
 
 R4-T01 exposes Madar-only production mapping endpoints:

@@ -19,6 +19,25 @@ class DashboardCardDefinition {
 class DashboardCards {
   static const all = [
     DashboardCardDefinition(
+      title: 'لوحة المتابعة',
+      icon: Icons.dashboard_customize_outlined,
+      requiredAny: {
+        'system.full_access',
+        'attendance.check_in',
+        'attendance.check_out',
+        'employee_services.view_self',
+        'orders.create',
+        'orders.approve',
+        'production.view_work_orders',
+        'delivery.view_assigned_batches',
+        'delivery.update_batch',
+        'payments.collect',
+        'cashbox.view_own',
+        'cashbox.review',
+        'accounting.view_sync_logs',
+      },
+    ),
+    DashboardCardDefinition(
       title: 'الحضور والانصراف',
       icon: Icons.schedule,
       requiredAny: {'attendance.check_in', 'attendance.check_out'},
