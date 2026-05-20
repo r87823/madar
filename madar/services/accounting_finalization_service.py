@@ -285,7 +285,7 @@ def _payments(order_name, frappe_module):
 
 def _mark_payment_entry_submitted(payment, user, frappe_module):
     payment_doc = payment
-    if not hasattr(payment_doc, "save"):
+    if not callable(getattr(payment_doc, "save", None)):
         payment_doc, _error_result = _get_payment(_get_value(payment, "name"), frappe_module)
     payment_doc.erp_payment_entry_docstatus = 1
     payment_doc.erp_payment_submitted_at = _server_now(frappe_module)
@@ -304,7 +304,7 @@ def _store_order_error(order, code, message, frappe_module):
 
 def _store_payment_error(payment, message, frappe_module):
     payment_doc = payment
-    if not hasattr(payment_doc, "save"):
+    if not callable(getattr(payment_doc, "save", None)):
         payment_doc, _error_result = _get_payment(_get_value(payment, "name"), frappe_module)
     payment_doc.erp_payment_submit_error = (message or "").strip()[:200]
     payment_doc.save(ignore_permissions=True)

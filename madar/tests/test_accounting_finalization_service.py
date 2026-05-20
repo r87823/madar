@@ -106,6 +106,22 @@ class AccountingFinalizationServiceTest(unittest.TestCase):
         self.assertEqual([payment["erp_payment_entry_docstatus"] for payment in fake_frappe.payments], [1, 1])
         self.assertTrue(fake_frappe.payments[0]["erp_payment_submitted_at"])
 
+    def test_payment_entry_submit_handles_frappe_rows_with_non_callable_save_attribute(self):
+        fake_frappe = FakeFrappe(
+            roles=["Madar Accountant"],
+            orders=[_final_order("MADAR-ORD-1")],
+            payments=[_final_payment("PAY-1", "MADAR-ORD-1", 100, "cash")],
+            payment_entries=[_erp_doc("ACC-PAY-1", docstatus=0)],
+            row_save_attribute=None,
+        )
+
+        result = accounting_finalization_service.submit_payment_entries_for_order(
+            "accountant.test@example.com", "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(fake_frappe.payments[0]["erp_payment_entry_docstatus"], 1)
+
     def test_finalization_blocks_unpaid_order_and_unapproved_cashbox(self):
         unpaid = FakeFrappe(
             roles=["Madar Accountant"],
@@ -222,11 +238,20 @@ class ERPDoc(ReviewFakeDoc):
 
 
 class FakeFrappe(ReviewFakeFrappe):
-    def __init__(self, *, sales_orders=None, sales_invoices=None, payment_entries=None, **kwargs):
+    def __init__(
+        self,
+        *,
+        sales_orders=None,
+        sales_invoices=None,
+        payment_entries=None,
+        row_save_attribute="missing",
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.sales_orders = list(sales_orders or [_erp_doc("SAL-ORD-1", docstatus=1)])
         self.sales_invoices = list(sales_invoices or [_erp_doc("ACC-SINV-1", docstatus=0)])
         self.payment_entries = list(payment_entries or [_erp_doc("ACC-PAY-1", docstatus=0)])
+        self.row_save_attribute = row_save_attribute
         self.created_delivery_notes = []
         self.created_stock_entries = []
         self.utils = types.SimpleNamespace(
@@ -252,6 +277,17 @@ class FakeFrappe(ReviewFakeFrappe):
         if doctype == "Stock Entry":
             self.created_stock_entries.append(name)
         return super().get_doc(doctype, name)
+
+    def get_all(self, doctype, filters=None, fields=None, order_by=None, limit=20):
+        rows = super().get_all(doctype, filters=filters, fields=fields, order_by=order_by, limit=limit)
+        if (
+            doctype == "Madar Payment"
+            and fields
+            and self.row_save_attribute != "missing"
+        ):
+            for row in rows:
+                setattr(row, "save", self.row_save_attribute)
+        return rows
 
 
 if __name__ == "__main__":
