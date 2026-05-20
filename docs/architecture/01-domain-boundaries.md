@@ -61,6 +61,12 @@ R6-T02 adds Madar-owned daily cashbox custody for operational cash payments. Cas
 
 Cashbox custody does not create ERPNext `Payment Entry`, `Sales Invoice`, GL entries, bank reconciliation records, refunds, or cash account postings. ERPNext accounting synchronization remains a later explicit workflow.
 
+### Payment Entry Sync
+
+R6-T03 adds one-way sync from `Madar Payment` to ERPNext `Payment Entry` as draft records only. `Madar Payment` remains the operational payment source, and the ERPNext Payment Entry is an accounting representation for later ERP review.
+
+This sync requires the related Madar Order to already reference an ERPNext Sales Order. It stores `erp_sync_status`, `erp_sync_error`, and `erp_payment_entry` on the Madar Payment. It must not submit Payment Entries, create Sales Invoices, post GL entries, perform bank reconciliation, modify cashbox approval status, create refunds, or run bidirectional sync.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

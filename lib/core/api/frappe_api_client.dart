@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../auth/session_store.dart';
 import '../auth/user_context.dart';
 import '../../features/accounting/erp_sync_models.dart';
+import '../../features/accounting/payment_sync_models.dart';
 import '../../features/attendance/attendance_status.dart';
 import '../../features/cashbox/cashbox_models.dart';
 import '../../features/delivery/delivery_batch_models.dart';
@@ -522,6 +523,35 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر إعادة محاولة المزامنة');
     return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<PaymentSyncItemList> listPaymentSyncItems() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.payment_sync.list_payment_sync_items'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل مزامنة المدفوعات');
+    return PaymentSyncItemList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<PaymentSyncItem> getPaymentSyncItem(String paymentName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.payment_sync.get_payment_sync_item'),
+      headers: _headers(),
+      body: {'payment_name': paymentName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل تفاصيل مزامنة الدفع');
+    return PaymentSyncItem.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<PaymentSyncItem> retryPaymentSync(String paymentName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.payment_sync.retry_payment_sync'),
+      headers: _headers(),
+      body: {'payment_name': paymentName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إعادة محاولة مزامنة الدفع');
+    return PaymentSyncItem.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<ProductList> listProducts({String search = ''}) async {

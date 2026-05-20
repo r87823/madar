@@ -17,7 +17,10 @@
     "reference_no",
     "notes",
     "is_cancelled",
-    "cancellation_reason"
+    "cancellation_reason",
+    "erp_sync_status",
+    "erp_sync_error",
+    "erp_payment_entry"
   ],
   "fields": [
     {
@@ -101,6 +104,27 @@
       "fieldname": "cancellation_reason",
       "fieldtype": "Small Text",
       "label": "Cancellation Reason",
+      "read_only": 1
+    },
+    {
+      "default": "pending",
+      "fieldname": "erp_sync_status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "ERP Sync Status",
+      "options": "pending\nsynced\nfailed",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_sync_error",
+      "fieldtype": "Small Text",
+      "label": "ERP Sync Error",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_payment_entry",
+      "fieldtype": "Data",
+      "label": "ERP Payment Entry",
       "read_only": 1
     }
   ],

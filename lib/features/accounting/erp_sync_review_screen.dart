@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
 import 'erp_sync_models.dart';
+import 'payment_sync_models.dart';
 
 class ErpSyncReviewScreen extends StatefulWidget {
   const ErpSyncReviewScreen({required this.apiClient, super.key});
@@ -14,10 +15,12 @@ class ErpSyncReviewScreen extends StatefulWidget {
 
 class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
   ErpSyncOrderList _orders = const ErpSyncOrderList(items: []);
+  PaymentSyncItemList _payments = const PaymentSyncItemList(items: []);
   bool _isLoading = true;
   String? _message;
   bool _isError = false;
   String? _retryingOrder;
+  String? _retryingPayment;
 
   @override
   void initState() {
@@ -49,19 +52,51 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
               ),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
-            else if (_orders.items.isEmpty)
-              const _EmptySyncOrders()
-            else
-              ..._orders.items.map(
-                (order) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _SyncOrderCard(
-                    order: order,
-                    isRetrying: _retryingOrder == order.name,
-                    onRetry: order.canRetry ? () => _retry(order) : null,
+            else ...[
+              Text(
+                'طلبات ERP',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 12),
+              if (_orders.items.isEmpty)
+                const _EmptySyncOrders()
+              else
+                ..._orders.items.map(
+                  (order) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _SyncOrderCard(
+                      order: order,
+                      isRetrying: _retryingOrder == order.name,
+                      onRetry: order.canRetry ? () => _retry(order) : null,
+                    ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              Text(
+                'مدفوعات ERP',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
+              const SizedBox(height: 12),
+              if (_payments.items.isEmpty)
+                const _EmptySyncPayments()
+              else
+                ..._payments.items.map(
+                  (payment) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _SyncPaymentCard(
+                      payment: payment,
+                      isRetrying: _retryingPayment == payment.name,
+                      onRetry: payment.canRetry
+                          ? () => _retryPayment(payment)
+                          : null,
+                    ),
+                  ),
+                ),
+            ],
           ],
         ),
       ),
@@ -76,9 +111,11 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     });
     try {
       final orders = await widget.apiClient.listErpSyncOrders();
+      final payments = await widget.apiClient.listPaymentSyncItems();
       if (!mounted) return;
       setState(() {
         _orders = orders;
+        _payments = payments;
       });
     } catch (error) {
       if (!mounted) return;
@@ -118,6 +155,34 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
       if (mounted) {
         setState(() {
           _retryingOrder = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _retryPayment(PaymentSyncItem payment) async {
+    setState(() {
+      _retryingPayment = payment.name;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final result = await widget.apiClient.retryPaymentSync(payment.name);
+      if (!mounted) return;
+      setState(() {
+        _message = 'تمت إعادة محاولة الدفع: ${result.statusLabel}';
+      });
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _retryingPayment = null;
         });
       }
     }
@@ -186,6 +251,67 @@ class _SyncOrderCard extends StatelessWidget {
   }
 }
 
+class _SyncPaymentCard extends StatelessWidget {
+  const _SyncPaymentCard({
+    required this.payment,
+    required this.isRetrying,
+    required this.onRetry,
+  });
+
+  final PaymentSyncItem payment;
+  final bool isRetrying;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    payment.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Chip(label: Text(payment.statusLabel)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _Line(label: 'الطلب', value: payment.madarOrder),
+            _Line(label: 'المبلغ', value: payment.amount.toStringAsFixed(2)),
+            _Line(label: 'الطريقة', value: payment.paymentMethod.arabicLabel),
+            if (payment.customerName.isNotEmpty)
+              _Line(label: 'العميل', value: payment.customerName),
+            if (payment.erpSalesOrder?.isNotEmpty == true)
+              _Line(label: 'طلب ERP', value: payment.erpSalesOrder!),
+            if (payment.erpPaymentEntry?.isNotEmpty == true)
+              _Line(label: 'قيد ERP', value: payment.erpPaymentEntry!),
+            if (payment.erpSyncError?.isNotEmpty == true)
+              _Line(label: 'الخطأ', value: payment.erpSyncError!),
+            if (onRetry != null) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: isRetrying ? null : onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة المحاولة'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _Line extends StatelessWidget {
   const _Line({required this.label, required this.value});
 
@@ -231,6 +357,26 @@ class _EmptySyncOrders extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Text(
           'لا توجد طلبات للمزامنة.',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySyncPayments extends StatelessWidget {
+  const _EmptySyncPayments();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Text(
+          'لا توجد مدفوعات للمزامنة.',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

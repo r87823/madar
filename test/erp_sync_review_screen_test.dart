@@ -54,6 +54,56 @@ void main() {
         baseUri: Uri.parse('https://madar-test.r8787m.cc'),
         sessionStore: MemorySessionStore(sid: 'abc123'),
         httpClient: MockClient((request) async {
+          if (request.url.path.endsWith('list_payment_sync_items')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': {
+                      'items': [
+                        _payment('PAY-PENDING', 'pending', method: 'cash'),
+                        _payment(
+                          'PAY-FAILED',
+                          'failed',
+                          method: 'card',
+                          error: 'Payment account missing',
+                        ),
+                        _payment(
+                          'PAY-SYNCED',
+                          'synced',
+                          method: 'transfer',
+                          paymentEntry: 'ACC-PAY-1',
+                        ),
+                      ],
+                    },
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.url.path.endsWith('retry_payment_sync')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': _payment(
+                      'PAY-PENDING',
+                      'synced',
+                      paymentEntry: 'ACC-PAY-2',
+                    ),
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
           return http.Response.bytes(
             utf8.encode(
               jsonEncode({
@@ -98,12 +148,18 @@ void main() {
       expect(find.text('بانتظار المزامنة'), findsOneWidget);
       expect(find.text('فشلت المزامنة'), findsOneWidget);
       expect(find.text('Customer missing'), findsOneWidget);
-      expect(find.text('إعادة المحاولة'), findsNWidgets(2));
-      await tester.drag(find.byType(ListView), const Offset(0, -360));
+      await tester.drag(find.byType(ListView), const Offset(0, -900));
       await tester.pumpAndSettle();
 
-      expect(find.text('تمت المزامنة'), findsOneWidget);
-      expect(find.text('SAL-ORD-1'), findsOneWidget);
+      expect(find.text('مدفوعات ERP'), findsOneWidget);
+      expect(find.text('PAY-PENDING'), findsOneWidget);
+      expect(find.text('نقد'), findsOneWidget);
+      expect(find.text('إعادة المحاولة'), findsWidgets);
+      await tester.drag(find.byType(ListView), const Offset(0, -420));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Payment account missing'), findsOneWidget);
+      expect(find.text('ACC-PAY-1'), findsOneWidget);
     },
   );
 }
@@ -124,5 +180,27 @@ Map<String, dynamic> _order(
     'erp_sales_order': salesOrder,
     'approved_at': '2026-05-19 12:00:00',
     'approved_by': 'branch.supervisor@example.com',
+  };
+}
+
+Map<String, dynamic> _payment(
+  String name,
+  String status, {
+  String method = 'cash',
+  String? error,
+  String? paymentEntry,
+}) {
+  return {
+    'name': name,
+    'madar_order': 'MADAR-ORD-1',
+    'customer_name': 'عميل الدفع',
+    'amount': 40,
+    'payment_method': method,
+    'payment_status': 'collected',
+    'erp_sync_status': status,
+    'erp_sync_error': error,
+    'erp_payment_entry': paymentEntry,
+    'erp_sales_order': 'SAL-ORD-1',
+    'reference_no': 'REF-1',
   };
 }

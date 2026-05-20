@@ -282,6 +282,20 @@ These endpoints require authentication and use permission keys. Flutter may subm
 
 Expected cash is calculated from `Madar Cashbox Entry` records created server-side when a collected `Madar Payment` uses `payment_method=cash`. Non-cash methods must not create cashbox entries. Cashbox records are operational custody records only and must not create ERPNext `Payment Entry`, `Sales Invoice`, GL entries, bank reconciliation records, or refunds.
 
+## Payment ERP Sync Endpoints
+
+R6-T03 exposes accounting/admin review endpoints for Madar Payment ERP sync:
+
+```text
+/api/method/madar.api.payment_sync.list_payment_sync_items
+/api/method/madar.api.payment_sync.get_payment_sync_item
+/api/method/madar.api.payment_sync.retry_payment_sync
+```
+
+These endpoints require authentication and `accounting.view_sync_logs` or `system.full_access`. Flutter may list safe sync metadata and request retry for pending/failed Madar Payments. Flutter must not call ERPNext Payment Entry APIs directly and must not send Payment Entry fields, customer account fields, posting accounts, or docstatus.
+
+Server-side sync creates ERPNext `Payment Entry` with `docstatus=0` only. This phase must not submit Payment Entry, create Sales Invoice, post GL entries, perform bank reconciliation, modify cashbox approval status, create refunds, or expose raw ERP exceptions.
+
 ## Long-Running Work
 
 Any long-running process must use Frappe background jobs. Mobile endpoints should enqueue the job and return a stable response that lets Flutter track or refresh status.

@@ -25,6 +25,9 @@ PAYMENT_FIELDS = [
     "notes",
     "is_cancelled",
     "cancellation_reason",
+    "erp_sync_status",
+    "erp_sync_error",
+    "erp_payment_entry",
     "modified",
 ]
 ORDER_PAYMENT_FIELDS = [
@@ -94,6 +97,9 @@ def collect_payment(
             "notes": (notes or "").strip(),
             "is_cancelled": 0,
             "cancellation_reason": "",
+            "erp_sync_status": "pending",
+            "erp_sync_error": "",
+            "erp_payment_entry": "",
         }
     )
     payment.insert(ignore_permissions=True)
@@ -265,6 +271,9 @@ def _serialize_payment(payment):
         "notes": _get_value(payment, "notes"),
         "is_cancelled": bool(_get_value(payment, "is_cancelled")),
         "cancellation_reason": _get_value(payment, "cancellation_reason"),
+        "erp_sync_status": _get_value(payment, "erp_sync_status") or "pending",
+        "erp_sync_error": _get_value(payment, "erp_sync_error"),
+        "erp_payment_entry": _get_value(payment, "erp_payment_entry"),
     }
 
 

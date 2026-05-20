@@ -36,6 +36,8 @@ class PaymentServiceTest(unittest.TestCase):
         self.assertEqual(full["data"]["order"]["paid_amount"], 100.0)
         self.assertEqual(full["data"]["order"]["remaining_amount"], 0.0)
         self.assertEqual(full["data"]["order"]["payment_status"], "paid")
+        self.assertEqual(partial["data"]["erp_sync_status"], "pending")
+        self.assertEqual(full["data"]["erp_sync_status"], "pending")
         self.assertEqual(len(fake_frappe.payments), 2)
         self.assertEqual(fake_frappe.payments[1]["reference_no"], "REF-123")
         self.assertEqual(fake_frappe.created_erp_payment_entries, [])
