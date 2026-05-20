@@ -16,7 +16,11 @@
     "is_read",
     "read_at",
     "created_at",
-    "priority"
+    "priority",
+    "route_key",
+    "route_params_json",
+    "action_label",
+    "deep_link_status"
   ],
   "fields": [
     {
@@ -93,6 +97,29 @@
       "label": "Priority",
       "options": "low\nnormal\nhigh",
       "reqd": 1
+    },
+    {
+      "default": "none",
+      "fieldname": "route_key",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Route Key",
+      "options": "order_detail\napproval_queue\nwork_order_detail\nproduction_queue\ndelivery_batch_detail\nmy_delivery_batches\ncashbox_detail\ncashbox_review\naccounting_review_order\nerp_sync_review\nattendance\nnone"
+    },
+    {
+      "fieldname": "route_params_json",
+      "fieldtype": "Small Text",
+      "label": "Route Params JSON"
+    },
+    {
+      "fieldname": "action_label",
+      "fieldtype": "Data",
+      "label": "Action Label"
+    },
+    {
+      "fieldname": "deep_link_status",
+      "fieldtype": "Data",
+      "label": "Deep Link Status"
     }
   ],
   "index_web_pages_for_search": 0,

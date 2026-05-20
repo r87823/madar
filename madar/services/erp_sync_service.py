@@ -454,6 +454,9 @@ def _notify_erp_sync_failed(entity_type, entity_name, frappe_module):
         entity_type=entity_type,
         entity_name=entity_name,
         priority="high",
+        route_key="erp_sync_review",
+        route_params={"entity_type": entity_type, "entity_name": entity_name},
+        action_label="مراجعة المزامنة",
         frappe_module=frappe_module,
     )
 

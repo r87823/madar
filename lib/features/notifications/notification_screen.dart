@@ -4,9 +4,14 @@ import '../../core/api/frappe_api_client.dart';
 import 'notification_models.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({required this.apiClient, super.key});
+  const NotificationScreen({
+    required this.apiClient,
+    this.onOpenNotification,
+    super.key,
+  });
 
   final FrappeApiClient apiClient;
+  final Future<bool> Function(MadarNotification notification)? onOpenNotification;
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -29,12 +34,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
   }
 
-  Future<void> _markRead(MadarNotification notification) async {
+  Future<bool> _markRead(MadarNotification notification) async {
     try {
       await widget.apiClient.markNotificationRead(notification.name);
       _reload();
+      return true;
     } catch (error) {
       setState(() => _error = error.toString());
+      return false;
+    }
+  }
+
+  Future<void> _open(MadarNotification notification) async {
+    final marked = await _markRead(notification);
+    if (!marked || notification.routeKey == 'none') return;
+    final handled = await (widget.onOpenNotification?.call(notification) ?? Future.value(false));
+    if (!mounted) return;
+    if (!handled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يمكن فتح هذا العنصر أو لا تملك صلاحية الوصول'),
+        ),
+      );
     }
   }
 
@@ -83,7 +104,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             itemBuilder: (context, index) {
               return _NotificationCard(
                 notification: items[index],
-                onTap: () => _markRead(items[index]),
+                onTap: () => _open(items[index]),
               );
             },
           );
@@ -139,8 +160,21 @@ class _NotificationCard extends StatelessWidget {
                   if (notification.createdAt.isNotEmpty)
                     Chip(label: Text(notification.createdAt)),
                   Chip(label: Text(_priorityLabel(notification.priority))),
+                  if (notification.actionLabel.isNotEmpty)
+                    Chip(label: Text(notification.actionLabel)),
                 ],
               ),
+              if (notification.actionLabel.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: OutlinedButton.icon(
+                    onPressed: onTap,
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('فتح'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

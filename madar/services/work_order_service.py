@@ -121,6 +121,9 @@ def create_work_orders_from_order(user, order_name, frappe_module=None):
         entity_type="Madar Order",
         entity_name=order_name,
         priority="normal",
+        route_key="production_queue",
+        route_params={"order_name": order_name},
+        action_label="عرض أوامر الإنتاج",
         frappe_module=frappe_module,
     )
     _commit(frappe_module)

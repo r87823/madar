@@ -208,6 +208,9 @@ def assign_driver(user, batch_name, driver_user, frappe_module=None):
         entity_type="Madar Delivery Batch",
         entity_name=_get_value(batch, "name"),
         priority="normal",
+        route_key="delivery_batch_detail",
+        route_params={"batch_name": _get_value(batch, "name")},
+        action_label="عرض الدفعة",
         frappe_module=frappe_module,
     )
     _commit(frappe_module)
@@ -467,6 +470,9 @@ def _notify_branch_transfer_received(batch, frappe_module):
             entity_type="Madar Order",
             entity_name=order_name,
             priority="normal",
+            route_key="order_detail",
+            route_params={"order_name": order_name},
+            action_label="عرض الطلب",
             frappe_module=frappe_module,
         )
 

@@ -1,3 +1,5 @@
+import json
+
 from madar.permissions.checks import get_permissions_for_roles
 
 
@@ -13,6 +15,10 @@ NOTIFICATION_FIELDS = [
     "read_at",
     "created_at",
     "priority",
+    "route_key",
+    "route_params_json",
+    "action_label",
+    "deep_link_status",
     "modified",
 ]
 MAX_NOTIFICATION_LIMIT = 50
@@ -27,6 +33,10 @@ def notify_user(
     entity_type=None,
     entity_name=None,
     priority="normal",
+    route_key="none",
+    route_params=None,
+    action_label="",
+    deep_link_status="",
     frappe_module=None,
 ):
     if frappe_module is None:
@@ -51,6 +61,10 @@ def notify_user(
             "read_at": None,
             "created_at": now,
             "priority": priority,
+            "route_key": _safe_route_key(route_key),
+            "route_params_json": _safe_route_params_json(route_params),
+            "action_label": (action_label or "").strip(),
+            "deep_link_status": (deep_link_status or "").strip(),
         }
     ).insert(ignore_permissions=True)
     _commit(frappe_module)
@@ -65,6 +79,10 @@ def notify_users(
     entity_type=None,
     entity_name=None,
     priority="normal",
+    route_key="none",
+    route_params=None,
+    action_label="",
+    deep_link_status="",
     frappe_module=None,
 ):
     if frappe_module is None:
@@ -80,6 +98,10 @@ def notify_users(
             entity_type=entity_type,
             entity_name=entity_name,
             priority=priority,
+            route_key=route_key,
+            route_params=route_params,
+            action_label=action_label,
+            deep_link_status=deep_link_status,
             frappe_module=frappe_module,
         )
         if result.get("ok"):
@@ -212,6 +234,10 @@ def _serialize_notification(notification):
         "read_at": _string_or_none(_get_value(notification, "read_at")),
         "created_at": _string_or_none(_get_value(notification, "created_at")),
         "priority": _get_value(notification, "priority") or "normal",
+        "route_key": _get_value(notification, "route_key") or "none",
+        "route_params": _safe_route_params(_get_value(notification, "route_params_json")),
+        "action_label": _get_value(notification, "action_label"),
+        "deep_link_status": _get_value(notification, "deep_link_status"),
     }
 
 
@@ -224,6 +250,51 @@ def _unique_users(users):
             seen.add(value)
             result.append(value)
     return result
+
+
+def _safe_route_key(route_key):
+    value = (route_key or "none").strip()
+    allowed = {
+        "order_detail",
+        "approval_queue",
+        "work_order_detail",
+        "production_queue",
+        "delivery_batch_detail",
+        "my_delivery_batches",
+        "cashbox_detail",
+        "cashbox_review",
+        "accounting_review_order",
+        "erp_sync_review",
+        "attendance",
+        "none",
+    }
+    return value if value in allowed else "none"
+
+
+def _safe_route_params_json(route_params):
+    if not isinstance(route_params, dict):
+        return "{}"
+    safe = {}
+    for key, value in route_params.items():
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            safe[str(key)] = value
+    return json.dumps(safe, ensure_ascii=False, sort_keys=True)
+
+
+def _safe_route_params(value):
+    if not value:
+        return {}
+    try:
+        decoded = json.loads(value)
+    except (TypeError, ValueError):
+        return {}
+    if not isinstance(decoded, dict):
+        return {}
+    return {
+        str(key): item
+        for key, item in decoded.items()
+        if isinstance(item, (str, int, float, bool)) or item is None
+    }
 
 
 def _log_notification_error(frappe_module, exc):

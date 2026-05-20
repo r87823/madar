@@ -214,6 +214,19 @@ R7-T01 exposes authenticated in-app notification endpoints:
 
 These endpoints return only notifications for the authenticated user. Flutter must not call Frappe `/api/resource/Madar Notification` directly, must not request another user's notifications, and must not treat notifications as authorization. They are display hints only; backend permissions remain the source of truth.
 
+R7-T02 adds safe navigation metadata to notification responses:
+
+- `route_key`.
+- `route_params`.
+- `action_label`.
+- `deep_link_status`.
+
+Route metadata must contain only safe identifiers such as Madar order names, delivery batch names, work order names, cashbox names, or ERP sync entity references. Flutter may use `route_key` to open an implemented Madar screen, but the target screen must still fetch data through Madar APIs so backend permissions and scopes remain authoritative. If the route cannot be opened, Flutter shows the Arabic safe message:
+
+```text
+لا يمكن فتح هذا العنصر أو لا تملك صلاحية الوصول
+```
+
 Notification endpoint errors also use:
 
 - `NOTIFICATION_NOT_FOUND`.

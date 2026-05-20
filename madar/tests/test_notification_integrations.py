@@ -28,6 +28,9 @@ class NotificationIntegrationTest(unittest.TestCase):
         self.assertEqual(kwargs["title"], "طلب جديد بانتظار الاعتماد")
         self.assertIn("MADAR-ORD-1", kwargs["message"])
         self.assertEqual(kwargs["event_type"], "order_submitted")
+        self.assertEqual(kwargs["route_key"], "approval_queue")
+        self.assertEqual(kwargs["route_params"], {"order_name": "MADAR-ORD-1"})
+        self.assertEqual(kwargs["action_label"], "عرض طلبات الاعتماد")
 
     def test_return_reject_and_approve_notify_order_creator(self):
         fake_frappe = OrderFrappe(
@@ -62,6 +65,8 @@ class NotificationIntegrationTest(unittest.TestCase):
         calls = notifications.safe_notify_user.call_args_list
         self.assertEqual(calls[0].args[0], "creator@example.com")
         self.assertEqual(calls[0].kwargs["title"], "تم إرجاع الطلب للتعديل")
+        self.assertEqual(calls[0].kwargs["route_key"], "order_detail")
+        self.assertEqual(calls[0].kwargs["route_params"], {"order_name": "MADAR-ORD-1"})
         self.assertEqual(calls[1].kwargs["title"], "تم رفض الطلب")
         self.assertEqual(calls[2].kwargs["title"], "تم اعتماد الطلب")
 
@@ -87,6 +92,11 @@ class NotificationIntegrationTest(unittest.TestCase):
         notifications.safe_notify_user.assert_called_once()
         self.assertEqual(notifications.safe_notify_user.call_args.args[0], "driver.test@example.com")
         self.assertEqual(notifications.safe_notify_user.call_args.kwargs["title"], "تم إسناد دفعة توصيل")
+        self.assertEqual(notifications.safe_notify_user.call_args.kwargs["route_key"], "delivery_batch_detail")
+        self.assertEqual(
+            notifications.safe_notify_user.call_args.kwargs["route_params"],
+            {"batch_name": batch["data"]["name"]},
+        )
 
     def test_cashbox_return_notifies_owner(self):
         fake_frappe = CashboxFrappe(
@@ -122,6 +132,8 @@ class NotificationIntegrationTest(unittest.TestCase):
         notifications.safe_notify_user.assert_called_once()
         self.assertEqual(notifications.safe_notify_user.call_args.args[0], "cashier.test@example.com")
         self.assertEqual(notifications.safe_notify_user.call_args.kwargs["title"], "تم إرجاع الصندوق")
+        self.assertEqual(notifications.safe_notify_user.call_args.kwargs["route_key"], "cashbox_detail")
+        self.assertEqual(notifications.safe_notify_user.call_args.kwargs["route_params"], {"cashbox_name": "CASHBOX-1"})
 
 
 if __name__ == "__main__":

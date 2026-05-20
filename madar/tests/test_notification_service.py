@@ -1,3 +1,4 @@
+import json
 import types
 import unittest
 from datetime import datetime
@@ -80,6 +81,9 @@ class NotificationServiceTest(unittest.TestCase):
             entity_type="Madar Order",
             entity_name="MADAR-ORD-1",
             priority="high",
+            route_key="order_detail",
+            route_params={"order_name": "MADAR-ORD-1"},
+            action_label="عرض الطلب",
             frappe_module=fake_frappe,
         )
 
@@ -88,6 +92,25 @@ class NotificationServiceTest(unittest.TestCase):
         self.assertEqual(fake_frappe.notifications[0]["title"], "طلب جديد بانتظار الاعتماد")
         self.assertEqual(fake_frappe.notifications[0]["is_read"], 0)
         self.assertEqual(fake_frappe.notifications[0]["priority"], "high")
+        self.assertEqual(fake_frappe.notifications[0]["route_key"], "order_detail")
+        self.assertEqual(json.loads(fake_frappe.notifications[0]["route_params_json"]), {"order_name": "MADAR-ORD-1"})
+        self.assertEqual(result["data"]["route_params"], {"order_name": "MADAR-ORD-1"})
+        self.assertEqual(result["data"]["action_label"], "عرض الطلب")
+
+    def test_notification_without_route_key_still_works(self):
+        fake_frappe = FakeFrappe()
+
+        result = notification_service.notify_user(
+            "user@example.com",
+            title="عنوان",
+            message="رسالة",
+            event_type="manual",
+            frappe_module=fake_frappe,
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["route_key"], "none")
+        self.assertEqual(result["data"]["route_params"], {})
 
     def test_notify_users_deduplicates_recipients(self):
         fake_frappe = FakeFrappe()
@@ -155,6 +178,10 @@ def _notification(name, recipient_user, is_read=0):
         "read_at": None,
         "created_at": datetime(2026, 5, 20, 10, int(name.split("-")[-1]), 0),
         "priority": "normal",
+        "route_key": "order_detail",
+        "route_params_json": '{"order_name": "MADAR-ORD-1"}',
+        "action_label": "عرض الطلب",
+        "deep_link_status": "",
         "modified": name,
     }
 

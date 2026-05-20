@@ -97,6 +97,8 @@ Notification titles and messages shown to users are Arabic-first. Internal `even
 
 Flutter reads notifications only through Madar APIs and may show unread counts, notification lists, and mark-read actions. Users can see and update only their own notifications.
 
+R7-T02 adds deep-link metadata for in-app navigation only. Route keys point to Madar Flutter screens such as order detail, approval queue, production queue, delivery batch detail, cashbox, accounting review, ERP sync review, or attendance. These route hints do not grant access; the destination screen must fetch through Madar APIs and accept backend permission/scoping decisions.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

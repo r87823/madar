@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/api/frappe_api_client.dart';
 import '../core/auth/auth_controller.dart';
+import '../core/auth/user_context.dart';
 import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/accounting/erp_sync_review_screen.dart';
@@ -10,10 +11,13 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/delivery/delivery_batch_list_screen.dart';
 import '../features/delivery/dispatch_queue_screen.dart';
 import '../features/orders/approval_queue_screen.dart';
+import '../features/orders/order_detail_screen.dart';
 import '../features/orders/order_list_screen.dart';
 import '../features/production/production_mapping_screen.dart';
+import '../features/production/work_order_detail_screen.dart';
 import '../features/production/work_order_list_screen.dart';
 import '../features/notifications/notification_screen.dart';
+import '../features/notifications/notification_models.dart';
 
 class MadarApp extends StatefulWidget {
   const MadarApp({super.key});
@@ -83,7 +87,11 @@ class _MadarAppState extends State<MadarApp> {
             onOpenNotifications: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => NotificationScreen(apiClient: _apiClient),
+                  builder: (_) => NotificationScreen(
+                    apiClient: _apiClient,
+                    onOpenNotification: (notification) =>
+                        _openNotificationTarget(context, currentContext, notification),
+                  ),
                 ),
               );
               _refreshUnreadNotifications();
@@ -178,6 +186,121 @@ class _MadarAppState extends State<MadarApp> {
       }
     } catch (_) {
       // Notification count is non-critical for the dashboard.
+    }
+  }
+
+  Future<bool> _openNotificationTarget(
+    BuildContext context,
+    UserContext currentContext,
+    MadarNotification notification,
+  ) async {
+    try {
+      switch (notification.routeKey) {
+        case 'order_detail':
+          final orderName = notification.routeParams['order_name'] ?? '';
+          if (orderName.isEmpty) return false;
+          final order = await _apiClient.getOrder(orderName);
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => OrderDetailScreen(
+                apiClient: _apiClient,
+                initialOrder: order,
+                canCollectPayments: currentContext.permissions.contains(
+                  'payments.collect',
+                ),
+              ),
+            ),
+          );
+          return true;
+        case 'approval_queue':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ApprovalQueueScreen(apiClient: _apiClient),
+            ),
+          );
+          return true;
+        case 'production_queue':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => WorkOrderListScreen(apiClient: _apiClient),
+            ),
+          );
+          return true;
+        case 'work_order_detail':
+          final workOrderName = notification.routeParams['work_order'] ?? '';
+          if (workOrderName.isEmpty) return false;
+          final workOrder = await _apiClient.getWorkOrder(workOrderName);
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => WorkOrderDetailScreen(
+                apiClient: _apiClient,
+                initialOrder: workOrder,
+              ),
+            ),
+          );
+          return true;
+        case 'delivery_batch_detail':
+          final batchName = notification.routeParams['batch_name'] ?? '';
+          if (batchName.isEmpty) return false;
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DeliveryBatchDetailScreen(
+                apiClient: _apiClient,
+                batchName: batchName,
+              ),
+            ),
+          );
+          return true;
+        case 'my_delivery_batches':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => DeliveryBatchListScreen(apiClient: _apiClient),
+            ),
+          );
+          return true;
+        case 'cashbox_detail':
+        case 'cashbox_review':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => CashboxScreen(
+                apiClient: _apiClient,
+                userContext: currentContext,
+              ),
+            ),
+          );
+          return true;
+        case 'accounting_review_order':
+        case 'erp_sync_review':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ErpSyncReviewScreen(
+                apiClient: _apiClient,
+                permissions: currentContext.permissions,
+              ),
+            ),
+          );
+          return true;
+        case 'attendance':
+          if (!context.mounted) return false;
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => AttendanceScreen(apiClient: _apiClient),
+            ),
+          );
+          return true;
+        default:
+          return false;
+      }
+    } catch (_) {
+      return false;
     }
   }
 }

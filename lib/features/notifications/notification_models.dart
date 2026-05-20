@@ -9,6 +9,10 @@ class MadarNotification {
     required this.isRead,
     required this.createdAt,
     required this.priority,
+    required this.routeKey,
+    required this.routeParams,
+    required this.actionLabel,
+    required this.deepLinkStatus,
   });
 
   final String name;
@@ -20,6 +24,10 @@ class MadarNotification {
   final bool isRead;
   final String createdAt;
   final String priority;
+  final String routeKey;
+  final Map<String, String> routeParams;
+  final String actionLabel;
+  final String deepLinkStatus;
 
   factory MadarNotification.fromMap(Map<String, dynamic> map) {
     return MadarNotification(
@@ -32,6 +40,10 @@ class MadarNotification {
       isRead: _bool(map['is_read']),
       createdAt: map['created_at']?.toString() ?? '',
       priority: map['priority']?.toString() ?? 'normal',
+      routeKey: map['route_key']?.toString() ?? 'none',
+      routeParams: _stringMap(map['route_params']),
+      actionLabel: map['action_label']?.toString() ?? '',
+      deepLinkStatus: map['deep_link_status']?.toString() ?? '',
     );
   }
 }
@@ -77,4 +89,9 @@ Map<String, dynamic> _map(Object? value) {
   return value is Map
       ? value.map((key, value) => MapEntry('$key', value))
       : <String, dynamic>{};
+}
+
+Map<String, String> _stringMap(Object? value) {
+  final source = _map(value);
+  return source.map((key, value) => MapEntry(key, value?.toString() ?? ''));
 }

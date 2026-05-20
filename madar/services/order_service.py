@@ -330,6 +330,9 @@ def _notify_order_submitted(order, frappe_module):
         entity_type="Madar Order",
         entity_name=order_name,
         priority="normal",
+        route_key="approval_queue",
+        route_params={"order_name": order_name},
+        action_label="عرض طلبات الاعتماد",
         frappe_module=frappe_module,
     )
 
@@ -346,6 +349,9 @@ def _notify_approval_transition(order, next_status, reason, frappe_module):
             entity_type="Madar Order",
             entity_name=order_name,
             priority="normal",
+            route_key="order_detail",
+            route_params={"order_name": order_name},
+            action_label="عرض الطلب",
             frappe_module=frappe_module,
         )
     elif next_status == "rejected":
@@ -357,6 +363,9 @@ def _notify_approval_transition(order, next_status, reason, frappe_module):
             entity_type="Madar Order",
             entity_name=order_name,
             priority="high",
+            route_key="order_detail",
+            route_params={"order_name": order_name},
+            action_label="عرض الطلب",
             frappe_module=frappe_module,
         )
     elif next_status == "approved":
@@ -368,6 +377,9 @@ def _notify_approval_transition(order, next_status, reason, frappe_module):
             entity_type="Madar Order",
             entity_name=order_name,
             priority="normal",
+            route_key="order_detail",
+            route_params={"order_name": order_name},
+            action_label="عرض الطلب",
             frappe_module=frappe_module,
         )
         notification_service.safe_notify_users(
@@ -381,6 +393,9 @@ def _notify_approval_transition(order, next_status, reason, frappe_module):
             entity_type="Madar Order",
             entity_name=order_name,
             priority="normal",
+            route_key="order_detail",
+            route_params={"order_name": order_name},
+            action_label="عرض الطلب",
             frappe_module=frappe_module,
         )
 

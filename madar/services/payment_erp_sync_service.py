@@ -236,6 +236,9 @@ def _notify_payment_sync_failed(payment_name, frappe_module):
         entity_type="Madar Payment",
         entity_name=payment_name,
         priority="high",
+        route_key="erp_sync_review",
+        route_params={"entity_type": "Madar Payment", "entity_name": payment_name},
+        action_label="مراجعة المزامنة",
         frappe_module=frappe_module,
     )
 

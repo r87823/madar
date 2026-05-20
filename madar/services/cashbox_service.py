@@ -218,6 +218,9 @@ def return_cashbox(user, cashbox_name, reason, frappe_module=None):
         entity_type="Madar Cashbox",
         entity_name=_get_value(cashbox, "name"),
         priority="high",
+        route_key="cashbox_detail",
+        route_params={"cashbox_name": _get_value(cashbox, "name")},
+        action_label="عرض الصندوق",
         frappe_module=frappe_module,
     )
     _commit(frappe_module)
