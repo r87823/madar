@@ -1,5 +1,6 @@
 import types
 import unittest
+from unittest.mock import patch
 
 from madar.dev import bootstrap_users
 from madar.permissions import roles
@@ -14,6 +15,22 @@ class DevUserBootstrapTest(unittest.TestCase):
         self.assertEqual(result, {"enabled": False, "users": []})
         self.assertEqual(fake_frappe.created_users, [])
         self.assertEqual(fake_frappe.created_employees, [])
+
+    def test_bootstrap_accepts_canonical_environment_guard(self):
+        fake_frappe = FakeFrappe()
+
+        with patch.dict(
+            "os.environ",
+            {
+                "MADAR_ENABLE_DEV_BOOTSTRAP": "1",
+                "MADAR_DEV_USER_PASSWORD": "temporary-secret",
+            },
+            clear=False,
+        ):
+            result = bootstrap_users.bootstrap_dev_users(frappe_module=fake_frappe)
+
+        self.assertEqual(result["enabled"], True)
+        self.assertIn("employee.test@example.com", result["users"])
 
     def test_bootstrap_creates_required_users_employees_roles_and_context(self):
         fake_frappe = FakeFrappe(config={"enable_madar_dev_user_bootstrap": 1})

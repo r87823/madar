@@ -17,7 +17,8 @@ from madar.services.employee_context import get_employee_context
 
 
 BOOTSTRAP_ENABLED_CONFIG_KEY = "enable_madar_dev_user_bootstrap"
-BOOTSTRAP_ENABLED_ENV = "MADAR_ENABLE_DEV_USER_BOOTSTRAP"
+BOOTSTRAP_ENABLED_ENV = "MADAR_ENABLE_DEV_BOOTSTRAP"
+LEGACY_BOOTSTRAP_ENABLED_ENV = "MADAR_ENABLE_DEV_USER_BOOTSTRAP"
 BOOTSTRAP_PASSWORD_CONFIG_KEY = "madar_dev_user_password"
 BOOTSTRAP_PASSWORD_ENV = "MADAR_DEV_USER_PASSWORD"
 DEFAULT_COMPANY = "Madar"
@@ -133,7 +134,8 @@ def get_expected_context_for_dev_user(email, frappe_module=None):
 def _is_bootstrap_enabled(frappe_module):
     config_value = _get_config_value(frappe_module, BOOTSTRAP_ENABLED_CONFIG_KEY)
     env_value = os.environ.get(BOOTSTRAP_ENABLED_ENV)
-    return _truthy(config_value) or _truthy(env_value)
+    legacy_env_value = os.environ.get(LEGACY_BOOTSTRAP_ENABLED_ENV)
+    return _truthy(config_value) or _truthy(env_value) or _truthy(legacy_env_value)
 
 
 def _get_bootstrap_password(frappe_module):
