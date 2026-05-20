@@ -245,6 +245,23 @@ This endpoint requires authentication and returns Arabic-first summary cards and
 
 Flutter may use dashboard `route_key` values to navigate to already implemented Madar screens. The route metadata is only a UI hint; destination APIs remain responsible for authorization and scope checks. The dashboard must not create or mutate Madar records, ERPNext Delivery Notes, Stock Entries, Sales Invoices, Payment Entries, GL Entries, or any accounting/stock document.
 
+## Detailed Report Endpoints
+
+R8-T02 exposes read-only report endpoints:
+
+```text
+/api/method/madar.api.reports.get_orders_report
+/api/method/madar.api.reports.get_payments_report
+/api/method/madar.api.reports.get_production_report
+/api/method/madar.api.reports.get_delivery_report
+/api/method/madar.api.reports.get_cashbox_report
+/api/method/madar.api.reports.get_erp_sync_errors_report
+```
+
+These endpoints require authentication and return only paginated safe columns, summary counts, and safe totals. They use Madar permission keys and scope helpers. Flutter may send filters and pagination values only; it must not send ERP document fields, accounting finalization values, stock movement values, private HR fields, or credentials.
+
+Report endpoints must not create or mutate Madar business documents, ERPNext Delivery Notes, Stock Entries, Sales Invoices, Payment Entries, GL Entries, or export files. ERP sync error reports must expose safe error messages only, never raw tracebacks or secrets.
+
 ## Production Mapping Endpoints
 
 R4-T01 exposes Madar-only production mapping endpoints:

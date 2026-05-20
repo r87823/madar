@@ -19,6 +19,7 @@ import '../features/production/work_order_detail_screen.dart';
 import '../features/production/work_order_list_screen.dart';
 import '../features/notifications/notification_screen.dart';
 import '../features/notifications/notification_models.dart';
+import '../features/reports/reports_screen.dart';
 
 class MadarApp extends StatefulWidget {
   const MadarApp({super.key});
@@ -113,6 +114,13 @@ class _MadarAppState extends State<MadarApp> {
                       routeParams,
                     ),
                   ),
+                ),
+              );
+            },
+            onOpenReports: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ReportsScreen(apiClient: _apiClient),
                 ),
               );
             },

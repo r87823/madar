@@ -15,6 +15,7 @@ class DashboardScreen extends StatelessWidget {
     required this.onOpenProductionMappings,
     required this.onOpenWorkOrders,
     this.onOpenFollowupDashboard,
+    this.onOpenReports,
     this.unreadNotifications = 0,
     this.onOpenNotifications,
     this.onOpenDispatchQueue,
@@ -32,6 +33,7 @@ class DashboardScreen extends StatelessWidget {
   final VoidCallback onOpenProductionMappings;
   final VoidCallback onOpenWorkOrders;
   final VoidCallback? onOpenFollowupDashboard;
+  final VoidCallback? onOpenReports;
   final int unreadNotifications;
   final VoidCallback? onOpenNotifications;
   final VoidCallback? onOpenDispatchQueue;
@@ -125,6 +127,7 @@ class DashboardScreen extends StatelessWidget {
                     onOpenProductionMappings: onOpenProductionMappings,
                     onOpenWorkOrders: onOpenWorkOrders,
                     onOpenFollowupDashboard: onOpenFollowupDashboard,
+                    onOpenReports: onOpenReports,
                     onOpenDispatchQueue: onOpenDispatchQueue,
                     onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
                     onOpenCashbox: onOpenCashbox,
@@ -254,6 +257,7 @@ class _DashboardCard extends StatelessWidget {
     required this.onOpenProductionMappings,
     required this.onOpenWorkOrders,
     this.onOpenFollowupDashboard,
+    this.onOpenReports,
     this.onOpenDispatchQueue,
     this.onOpenMyDeliveryBatches,
     this.onOpenCashbox,
@@ -267,6 +271,7 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onOpenProductionMappings;
   final VoidCallback onOpenWorkOrders;
   final VoidCallback? onOpenFollowupDashboard;
+  final VoidCallback? onOpenReports;
   final VoidCallback? onOpenDispatchQueue;
   final VoidCallback? onOpenMyDeliveryBatches;
   final VoidCallback? onOpenCashbox;
@@ -282,6 +287,10 @@ class _DashboardCard extends StatelessWidget {
           if (card.title == 'لوحة المتابعة' &&
               onOpenFollowupDashboard != null) {
             onOpenFollowupDashboard!();
+            return;
+          }
+          if (card.title == 'التقارير' && onOpenReports != null) {
+            onOpenReports!();
             return;
           }
           if (card.title == 'الحضور والانصراف') {

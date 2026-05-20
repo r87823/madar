@@ -18,6 +18,7 @@ import '../../features/production/production_mapping_models.dart';
 import '../../features/production/work_order_models.dart';
 import '../../features/notifications/notification_models.dart';
 import '../../features/followup_dashboard/followup_dashboard_models.dart';
+import '../../features/reports/reports_models.dart';
 import 'http_client_factory.dart';
 
 class FrappeApiClient {
@@ -110,6 +111,19 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر تحميل لوحة المتابعة');
     return FollowupDashboardSummary.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ReportResult> getReport(
+    ReportDefinition definition, {
+    Map<String, String> filters = const {},
+  }) async {
+    final response = await _httpClient.post(
+      _methodUri(definition.method),
+      headers: _headers(),
+      body: {if (filters.isNotEmpty) 'filters': jsonEncode(filters)},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل التقرير');
+    return ReportResult.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<AttendanceStatus> getAttendanceStatus() async {

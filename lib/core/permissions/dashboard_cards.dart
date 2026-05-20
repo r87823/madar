@@ -88,6 +88,22 @@ class DashboardCards {
       requiredAny: {'cashbox.view_own', 'cashbox.submit'},
     ),
     DashboardCardDefinition(
+      title: 'التقارير',
+      icon: Icons.table_chart_outlined,
+      requiredAny: {
+        'system.full_access',
+        'orders.create',
+        'orders.approve',
+        'production.view_work_orders',
+        'delivery.view_assigned_batches',
+        'delivery.update_batch',
+        'payments.collect',
+        'cashbox.view_own',
+        'cashbox.review',
+        'accounting.view_sync_logs',
+      },
+    ),
+    DashboardCardDefinition(
       title: 'المحاسبة والمزامنة',
       icon: Icons.sync_alt_outlined,
       requiredAny: {'accounting.view_sync_logs'},
