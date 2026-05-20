@@ -169,15 +169,6 @@ def map_payment_to_payment_entry(payload):
         "reference_no": payload.get("reference_no"),
         "reference_date": payload.get("reference_date"),
         "remarks": payload.get("remarks"),
-        "references": [
-            {
-                "reference_doctype": "Sales Order",
-                "reference_name": payload.get("erp_sales_order"),
-                "allocated_amount": _float(payload.get("paid_amount")),
-            }
-        ]
-        if payload.get("erp_sales_order")
-        else [],
     }
     if payload.get("company"):
         data["company"] = payload.get("company")
