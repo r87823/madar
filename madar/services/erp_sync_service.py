@@ -15,6 +15,7 @@ SYNC_ORDER_FIELDS = [
     "erp_sales_order",
     "erp_sales_order_docstatus",
     "erp_sales_invoice",
+    "erp_sales_invoice_docstatus",
     "erp_invoice_sync_status",
     "erp_invoice_sync_error",
     "erp_invoice_created_at",
@@ -418,6 +419,7 @@ def mark_invoice_sync_success(order_name, sales_invoice_name, frappe_module=None
     order.erp_invoice_sync_status = "synced"
     order.erp_invoice_sync_error = None
     order.erp_sales_invoice = (sales_invoice_name or "").strip()
+    order.erp_sales_invoice_docstatus = 0
     order.erp_invoice_created_at = _server_now(frappe_module)
     order.save(ignore_permissions=True)
     _audit(order, "mark_invoice_sync_success")
@@ -546,6 +548,11 @@ def _serialize_sync_order(order):
         if order_service._get_value(order, "erp_sales_order_docstatus") not in {None, ""}
         else None,
         "erp_sales_invoice": order_service._get_value(order, "erp_sales_invoice"),
+        "erp_sales_invoice_docstatus": int(
+            _float(order_service._get_value(order, "erp_sales_invoice_docstatus"))
+        )
+        if order_service._get_value(order, "erp_sales_invoice_docstatus") not in {None, ""}
+        else None,
         "erp_invoice_sync_status": order_service._get_value(order, "erp_invoice_sync_status")
         or "pending",
         "erp_invoice_sync_error": order_service._get_value(order, "erp_invoice_sync_error"),

@@ -104,7 +104,10 @@ class _MadarAppState extends State<MadarApp> {
             onOpenErpSyncReview: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => ErpSyncReviewScreen(apiClient: _apiClient),
+                  builder: (_) => ErpSyncReviewScreen(
+                    apiClient: _apiClient,
+                    permissions: currentContext.permissions,
+                  ),
                 ),
               );
             },

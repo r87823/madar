@@ -188,6 +188,19 @@ R6-T05 adds Madar-only accounting finalization review endpoints:
 
 These endpoints require authentication and `accounting.view_sync_logs` or `system.full_access`. They expose safe summary fields only: Madar Order totals/status, ERP Sales Order sync/submit metadata, ERP Sales Invoice draft sync metadata, payment totals/status summaries, cashbox review summaries, readiness flags, and stable alert codes. Flutter may mark a Madar order as reviewed or needing attention, but it must not expose buttons for submitting Sales Invoice, submitting Payment Entry, posting GL, creating Delivery Note, or moving stock.
 
+R6-T06 adds final accounting submit endpoints:
+
+```text
+/api/method/madar.api.accounting_finalization.get_finalization_status
+/api/method/madar.api.accounting_finalization.submit_sales_invoice
+/api/method/madar.api.accounting_finalization.submit_payment_entries
+/api/method/madar.api.accounting_finalization.finalize_order_accounting
+```
+
+`get_finalization_status` requires `accounting.view_sync_logs` or `system.full_access` and is read-only. The submit/finalize endpoints require `accounting.finalize` or `system.full_access`; `accounting.view_sync_logs` alone must not authorize them.
+
+Flutter must show a confirmation dialog before final submit actions because ERPNext may post GL entries when documents are submitted. Flutter must not send ERPNext document fields, allocation details, GL data, Delivery Note data, Stock Entry data, or docstatus values. Madar derives the ERP Sales Invoice and Payment Entry records from the Madar order and linked Madar payments.
+
 ## Production Mapping Endpoints
 
 R4-T01 exposes Madar-only production mapping endpoints:

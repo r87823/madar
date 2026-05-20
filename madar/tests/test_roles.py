@@ -57,7 +57,7 @@ class MadarRoleRegistryTest(unittest.TestCase):
         )
         self.assertEqual(
             checks.get_permissions_for_roles(["Madar Accountant"]),
-            ["cashbox.review", "accounting.view_sync_logs"],
+            ["cashbox.review", "accounting.view_sync_logs", "accounting.finalize"],
         )
 
     def test_system_full_access_still_grants_all_permissions(self):

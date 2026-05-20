@@ -11,6 +11,9 @@ class AccountingReviewSummary {
     this.accountingReviewNotes,
     this.accountingReviewedBy,
     this.accountingReviewedAt,
+    this.accountingFinalizedAt,
+    this.accountingFinalizedBy,
+    this.accountingFinalizationError,
   });
 
   final AccountingOrderSummary order;
@@ -24,6 +27,9 @@ class AccountingReviewSummary {
   final String? accountingReviewNotes;
   final String? accountingReviewedBy;
   final String? accountingReviewedAt;
+  final String? accountingFinalizedAt;
+  final String? accountingFinalizedBy;
+  final String? accountingFinalizationError;
 
   String get statusLabel {
     switch (accountingStatus) {
@@ -60,6 +66,11 @@ class AccountingReviewSummary {
       accountingReviewNotes: _nullableString(map['accounting_review_notes']),
       accountingReviewedBy: _nullableString(map['accounting_reviewed_by']),
       accountingReviewedAt: _nullableString(map['accounting_reviewed_at']),
+      accountingFinalizedAt: _nullableString(map['accounting_finalized_at']),
+      accountingFinalizedBy: _nullableString(map['accounting_finalized_by']),
+      accountingFinalizationError: _nullableString(
+        map['accounting_finalization_error'],
+      ),
     );
   }
 
@@ -79,7 +90,9 @@ class AccountingReviewSummaryList {
     final data = _map(envelope['data']);
     final rawItems = data['items'];
     final items = rawItems is List
-        ? rawItems.map((item) => AccountingReviewSummary.fromMap(_map(item))).toList(growable: false)
+        ? rawItems
+              .map((item) => AccountingReviewSummary.fromMap(_map(item)))
+              .toList(growable: false)
         : <AccountingReviewSummary>[];
     return AccountingReviewSummaryList(items: items);
   }
@@ -96,6 +109,10 @@ class AccountingOrderSummary {
     required this.orderStatus,
     required this.deliveryStatus,
     required this.productionStatus,
+    this.erpSalesInvoiceDocstatus,
+    this.accountingFinalizedAt,
+    this.accountingFinalizedBy,
+    this.accountingFinalizationError,
   });
 
   final String name;
@@ -107,6 +124,10 @@ class AccountingOrderSummary {
   final String orderStatus;
   final String deliveryStatus;
   final String productionStatus;
+  final int? erpSalesInvoiceDocstatus;
+  final String? accountingFinalizedAt;
+  final String? accountingFinalizedBy;
+  final String? accountingFinalizationError;
 
   factory AccountingOrderSummary.fromMap(Map<String, dynamic> map) {
     return AccountingOrderSummary(
@@ -119,6 +140,14 @@ class AccountingOrderSummary {
       orderStatus: map['order_status']?.toString() ?? '',
       deliveryStatus: map['delivery_status']?.toString() ?? '',
       productionStatus: map['production_status']?.toString() ?? '',
+      erpSalesInvoiceDocstatus: _toIntOrNull(
+        map['erp_sales_invoice_docstatus'],
+      ),
+      accountingFinalizedAt: _nullableString(map['accounting_finalized_at']),
+      accountingFinalizedBy: _nullableString(map['accounting_finalized_by']),
+      accountingFinalizationError: _nullableString(
+        map['accounting_finalization_error'],
+      ),
     );
   }
 }
@@ -149,17 +178,22 @@ class AccountingErpSalesOrderSummary {
 class AccountingErpSalesInvoiceSummary {
   const AccountingErpSalesInvoiceSummary({
     this.erpSalesInvoice,
+    this.erpSalesInvoiceDocstatus,
     this.erpInvoiceSyncStatus,
     this.erpInvoiceSyncError,
   });
 
   final String? erpSalesInvoice;
+  final int? erpSalesInvoiceDocstatus;
   final String? erpInvoiceSyncStatus;
   final String? erpInvoiceSyncError;
 
   factory AccountingErpSalesInvoiceSummary.fromMap(Map<String, dynamic> map) {
     return AccountingErpSalesInvoiceSummary(
       erpSalesInvoice: _nullableString(map['erp_sales_invoice']),
+      erpSalesInvoiceDocstatus: _toIntOrNull(
+        map['erp_sales_invoice_docstatus'],
+      ),
       erpInvoiceSyncStatus: _nullableString(map['erp_invoice_sync_status']),
       erpInvoiceSyncError: _nullableString(map['erp_invoice_sync_error']),
     );
@@ -172,12 +206,14 @@ class AccountingPaymentsSummary {
     required this.totalCollected,
     required this.methods,
     required this.erpSyncStatuses,
+    required this.items,
   });
 
   final int count;
   final double totalCollected;
   final Map<String, double> methods;
   final Map<String, int> erpSyncStatuses;
+  final List<AccountingPaymentItem> items;
 
   factory AccountingPaymentsSummary.fromMap(Map<String, dynamic> map) {
     return AccountingPaymentsSummary(
@@ -185,6 +221,121 @@ class AccountingPaymentsSummary {
       totalCollected: _toDouble(map['total_collected']),
       methods: _doubleMap(map['methods']),
       erpSyncStatuses: _intMap(map['erp_sync_statuses']),
+      items: (map['items'] is List)
+          ? (map['items'] as List)
+                .map((item) => AccountingPaymentItem.fromMap(_map(item)))
+                .toList(growable: false)
+          : const [],
+    );
+  }
+}
+
+class AccountingPaymentItem {
+  const AccountingPaymentItem({
+    required this.name,
+    required this.amount,
+    required this.paymentMethod,
+    this.erpSyncStatus,
+    this.erpPaymentEntry,
+    this.erpPaymentEntryDocstatus,
+    this.erpPaymentSubmittedAt,
+    this.erpPaymentSubmitError,
+  });
+
+  final String name;
+  final double amount;
+  final String paymentMethod;
+  final String? erpSyncStatus;
+  final String? erpPaymentEntry;
+  final int? erpPaymentEntryDocstatus;
+  final String? erpPaymentSubmittedAt;
+  final String? erpPaymentSubmitError;
+
+  String get docstatusLabel {
+    if (erpPaymentEntryDocstatus == 1) return 'معتمد';
+    if (erpPaymentSubmitError?.isNotEmpty == true) return 'فشل';
+    return 'مسودة';
+  }
+
+  factory AccountingPaymentItem.fromMap(Map<String, dynamic> map) {
+    return AccountingPaymentItem(
+      name: map['name']?.toString() ?? '',
+      amount: _toDouble(map['amount']),
+      paymentMethod: map['payment_method']?.toString() ?? '',
+      erpSyncStatus: _nullableString(map['erp_sync_status']),
+      erpPaymentEntry: _nullableString(map['erp_payment_entry']),
+      erpPaymentEntryDocstatus: _toIntOrNull(
+        map['erp_payment_entry_docstatus'],
+      ),
+      erpPaymentSubmittedAt: _nullableString(map['erp_payment_submitted_at']),
+      erpPaymentSubmitError: _nullableString(map['erp_payment_submit_error']),
+    );
+  }
+}
+
+class AccountingFinalizationStatus {
+  const AccountingFinalizationStatus({
+    required this.order,
+    required this.canFinalize,
+    required this.payments,
+    required this.finalized,
+    this.erpSalesInvoiceDocstatus,
+    this.accountingFinalizedAt,
+    this.accountingFinalizedBy,
+    this.accountingFinalizationError,
+  });
+
+  final AccountingOrderSummary order;
+  final bool canFinalize;
+  final int? erpSalesInvoiceDocstatus;
+  final List<AccountingPaymentItem> payments;
+  final bool finalized;
+  final String? accountingFinalizedAt;
+  final String? accountingFinalizedBy;
+  final String? accountingFinalizationError;
+
+  factory AccountingFinalizationStatus.fromEnvelope(
+    Map<String, dynamic> envelope,
+  ) {
+    final data = _map(envelope['data']);
+    final rawPayments = data['payments'];
+    return AccountingFinalizationStatus(
+      order: AccountingOrderSummary.fromMap(_map(data['order'])),
+      canFinalize: data['can_finalize'] == true,
+      erpSalesInvoiceDocstatus: _toIntOrNull(
+        data['erp_sales_invoice_docstatus'],
+      ),
+      payments: rawPayments is List
+          ? rawPayments
+                .map((item) => AccountingPaymentItem.fromMap(_map(item)))
+                .toList(growable: false)
+          : const [],
+      finalized: data['finalized'] == true,
+      accountingFinalizedAt: _nullableString(data['accounting_finalized_at']),
+      accountingFinalizedBy: _nullableString(data['accounting_finalized_by']),
+      accountingFinalizationError: _nullableString(
+        data['accounting_finalization_error'],
+      ),
+    );
+  }
+}
+
+class AccountingFinalizationPaymentList {
+  const AccountingFinalizationPaymentList({required this.items});
+
+  final List<AccountingPaymentItem> items;
+
+  factory AccountingFinalizationPaymentList.fromEnvelope(
+    Map<String, dynamic> envelope,
+  ) {
+    final data = _map(envelope['data']);
+    final rawItems = data['items'];
+    return AccountingFinalizationPaymentList(
+      items: rawItems is List
+          ? rawItems
+                .map((item) => AccountingPaymentItem.fromMap(_map(item)))
+                .toList(growable: false)
+          : const [],
     );
   }
 }
@@ -252,7 +403,9 @@ Map<String, dynamic> _map(Object? value) {
 }
 
 List<String> _stringList(Object? value) {
-  if (value is List) return value.map((item) => item.toString()).toList(growable: false);
+  if (value is List) {
+    return value.map((item) => item.toString()).toList(growable: false);
+  }
   return const [];
 }
 

@@ -20,7 +20,10 @@
     "cancellation_reason",
     "erp_sync_status",
     "erp_sync_error",
-    "erp_payment_entry"
+    "erp_payment_entry",
+    "erp_payment_entry_docstatus",
+    "erp_payment_submitted_at",
+    "erp_payment_submit_error"
   ],
   "fields": [
     {
@@ -125,6 +128,24 @@
       "fieldname": "erp_payment_entry",
       "fieldtype": "Data",
       "label": "ERP Payment Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_payment_entry_docstatus",
+      "fieldtype": "Int",
+      "label": "ERP Payment Entry Docstatus",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_payment_submitted_at",
+      "fieldtype": "Datetime",
+      "label": "ERP Payment Submitted At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_payment_submit_error",
+      "fieldtype": "Small Text",
+      "label": "ERP Payment Submit Error",
       "read_only": 1
     }
   ],

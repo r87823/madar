@@ -29,12 +29,14 @@ ALL_PERMISSION_KEYS = [
     "cashbox.submit",
     "cashbox.review",
     "accounting.view_sync_logs",
+    "accounting.finalize",
 ]
 
 
 ROLE_PERMISSION_MAP = {
     "Administrator": ["system.full_access"],
     "System Manager": ["system.full_access"],
+    "Accounts User": ["accounting.view_sync_logs"],
     MADAR_ADMIN: ["system.full_access"],
     "Employee": [
         "attendance.check_in",
@@ -68,6 +70,7 @@ ROLE_PERMISSION_MAP = {
     ],
     MADAR_ACCOUNTANT: [
         "accounting.view_sync_logs",
+        "accounting.finalize",
         "cashbox.review",
     ],
     MADAR_CASHIER: [

@@ -45,6 +45,7 @@ Initial permission keys include:
 - `cashbox.submit`.
 - `cashbox.review`.
 - `accounting.view_sync_logs`.
+- `accounting.finalize`.
 
 The current registry maps these keys to Frappe roles as a foundation step. `system.full_access` grants every Madar permission key. Future tasks may replace or extend this mapping with DocType-backed rules, but endpoint code should continue to ask permission-key questions.
 
@@ -72,7 +73,8 @@ The permission registry maps Madar roles to permission keys:
 - `Madar Production User` grants production work-order view/update permissions.
 - `Madar Driver` grants delivery batch update, payment collection, and own cashbox submit permissions.
 - `Madar Cashier` grants payment collection, own cashbox submit, and cashbox review permissions.
-- `Madar Accountant` grants accounting sync log view and cashbox review permissions.
+- `Madar Accountant` grants accounting sync log view, accounting finalization, and cashbox review permissions.
+- Built-in `Accounts User` grants accounting sync log view only and must not submit final ERP accounting documents.
 
 Frappe built-in `Administrator`, `System Manager`, and `Employee` mappings remain supported for compatibility and system administration. Future protected actions should use permission keys and scope helpers, not raw role checks.
 
@@ -142,6 +144,9 @@ R3-T03 approval APIs use:
 - R3-T05 ERP sync is manual/internal only and has no mobile endpoint. A later task must define explicit admin permissions before exposing sync actions through any API.
 - R3-T06 exposes ERP sync review and retry through Madar APIs for accounting/admin users. These APIs require `accounting.view_sync_logs`; endpoint code delegates to `madar.services.erp_sync_service` and must not check raw roles directly.
 - R6-T05 exposes accounting finalization review summaries and Madar-only review markers through `madar.api.accounting_review`. These APIs require `accounting.view_sync_logs` or `system.full_access`; endpoint code delegates to `madar.services.accounting_review_service` and must not submit ERP documents or check raw roles directly.
+- R6-T06 exposes final ERP submit actions through `madar.api.accounting_finalization`. Read status requires `accounting.view_sync_logs` or `system.full_access`; submitting Sales Invoices, submitting Payment Entries, and finalizing accounting require `accounting.finalize` or `system.full_access`.
+- `accounting.view_sync_logs` alone is read-only. It must not authorize ERP Sales Invoice submit, ERP Payment Entry submit, or accounting finalization.
+- `Madar Cashier`, `Madar Branch User`, `Madar Branch Supervisor`, `Madar Driver`, and `Madar Employee` must not receive `accounting.finalize`.
 
 ## Production Mapping Permissions
 

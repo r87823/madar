@@ -93,7 +93,10 @@ void main() {
                     'ok': true,
                     'data': {
                       'items': [
-                        _accountingSummary('MADAR-ORD-READY', 'ready_for_review'),
+                        _accountingSummary(
+                          'MADAR-ORD-READY',
+                          'ready_for_review',
+                        ),
                         _accountingSummary(
                           'MADAR-ORD-ATTENTION',
                           'needs_attention',
@@ -337,6 +340,9 @@ void main() {
       expect(find.text('التنبيهات'), findsOneWidget);
       expect(find.text('تمّت المراجعة'), findsOneWidget);
       expect(find.text('يحتاج مراجعة / ملاحظة'), findsWidgets);
+      expect(find.text('اعتماد فاتورة ERP'), findsNothing);
+      expect(find.text('اعتماد سندات الدفع'), findsNothing);
+      expect(find.text('إنهاء الإقفال المحاسبي'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('مدفوعات ERP'),
         500,
@@ -357,6 +363,101 @@ void main() {
 
       expect(find.text('Payment account missing'), findsOneWidget);
       expect(find.text('ACC-PAY-1'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'finalization buttons require finalize permission and confirmation',
+    (tester) async {
+      final requests = <http.Request>[];
+      final client = FrappeApiClient(
+        baseUri: Uri.parse('https://madar-test.r8787m.cc'),
+        sessionStore: MemorySessionStore(sid: 'abc123'),
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          if (request.url.path.endsWith('list_orders_for_accounting_review')) {
+            return _json({
+              'message': {
+                'ok': true,
+                'data': {
+                  'items': [
+                    _accountingSummary('MADAR-ORD-READY', 'ready_for_review'),
+                  ],
+                },
+                'error': null,
+              },
+            });
+          }
+          if (request.url.path.endsWith('submit_sales_invoice')) {
+            return _json({
+              'message': {
+                'ok': true,
+                'data': _accountingSummary(
+                  'MADAR-ORD-READY',
+                  'reviewed',
+                )['order'],
+                'error': null,
+              },
+            });
+          }
+          return _json({
+            'message': {
+              'ok': true,
+              'data': {'items': []},
+              'error': null,
+            },
+          });
+        }),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: ErpSyncReviewScreen(
+              apiClient: client,
+              permissions: const [
+                'accounting.view_sync_logs',
+                'accounting.finalize',
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final submitInvoiceButton = find.widgetWithText(
+        FilledButton,
+        'اعتماد فاتورة ERP',
+      );
+      await tester.scrollUntilVisible(
+        submitInvoiceButton,
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(submitInvoiceButton);
+      await tester.pumpAndSettle();
+      await tester.tap(submitInvoiceButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'هذا الإجراء قد يؤثر على القيود المحاسبية في ERPNext. هل أنت متأكد؟',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('تأكيد'));
+      await tester.pumpAndSettle();
+
+      expect(
+        requests.any(
+          (request) => request.url.path.endsWith(
+            'madar.api.accounting_finalization.submit_sales_invoice',
+          ),
+        ),
+        isTrue,
+      );
     },
   );
 }
@@ -447,6 +548,7 @@ Map<String, dynamic> _accountingSummary(
     },
     'erp_sales_invoice': {
       'erp_sales_invoice': 'ACC-SINV-1',
+      'erp_sales_invoice_docstatus': 0,
       'erp_invoice_sync_status': 'synced',
       'erp_invoice_sync_error': null,
     },
@@ -457,7 +559,18 @@ Map<String, dynamic> _accountingSummary(
           : 40,
       'methods': {'cash': 40},
       'erp_sync_statuses': {'synced': 1},
-      'items': [],
+      'items': [
+        {
+          'name': 'PAY-1',
+          'amount': 100,
+          'payment_method': 'cash',
+          'erp_sync_status': 'synced',
+          'erp_payment_entry': 'ACC-PAY-1',
+          'erp_payment_entry_docstatus': 0,
+          'erp_payment_submitted_at': null,
+          'erp_payment_submit_error': null,
+        },
+      ],
     },
     'cashbox': {
       'cash_payments_total': 40,
@@ -479,5 +592,16 @@ Map<String, dynamic> _accountingSummary(
     'accounting_review_notes': notes,
     'accounting_reviewed_by': null,
     'accounting_reviewed_at': null,
+    'accounting_finalized_at': null,
+    'accounting_finalized_by': null,
+    'accounting_finalization_error': null,
   };
+}
+
+http.Response _json(Map<String, dynamic> payload) {
+  return http.Response.bytes(
+    utf8.encode(jsonEncode(payload)),
+    200,
+    headers: {'content-type': 'application/json; charset=utf-8'},
+  );
 }

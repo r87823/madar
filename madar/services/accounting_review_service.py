@@ -21,12 +21,16 @@ ORDER_FIELDS = [
     "erp_sync_status",
     "erp_sync_error",
     "erp_sales_invoice",
+    "erp_sales_invoice_docstatus",
     "erp_invoice_sync_status",
     "erp_invoice_sync_error",
     "accounting_status",
     "accounting_review_notes",
     "accounting_reviewed_by",
     "accounting_reviewed_at",
+    "accounting_finalized_at",
+    "accounting_finalized_by",
+    "accounting_finalization_error",
     "modified",
 ]
 PAYMENT_FIELDS = [
@@ -39,6 +43,9 @@ PAYMENT_FIELDS = [
     "erp_sync_status",
     "erp_sync_error",
     "erp_payment_entry",
+    "erp_payment_entry_docstatus",
+    "erp_payment_submitted_at",
+    "erp_payment_submit_error",
 ]
 CASHBOX_ENTRY_FIELDS = ["name", "cashbox", "payment", "madar_order", "amount"]
 CASHBOX_FIELDS = ["name", "status", "reviewed_by", "reviewed_at"]
@@ -138,6 +145,7 @@ def _build_summary(order, frappe_module):
         },
         "erp_sales_invoice": {
             "erp_sales_invoice": _get_value(order, "erp_sales_invoice"),
+            "erp_sales_invoice_docstatus": _int_or_none(_get_value(order, "erp_sales_invoice_docstatus")),
             "erp_invoice_sync_status": _get_value(order, "erp_invoice_sync_status"),
             "erp_invoice_sync_error": _get_value(order, "erp_invoice_sync_error"),
         },
@@ -149,6 +157,9 @@ def _build_summary(order, frappe_module):
         "accounting_review_notes": _get_value(order, "accounting_review_notes"),
         "accounting_reviewed_by": _get_value(order, "accounting_reviewed_by"),
         "accounting_reviewed_at": _string_or_none(_get_value(order, "accounting_reviewed_at")),
+        "accounting_finalized_at": _string_or_none(_get_value(order, "accounting_finalized_at")),
+        "accounting_finalized_by": _get_value(order, "accounting_finalized_by"),
+        "accounting_finalization_error": _get_value(order, "accounting_finalization_error"),
     }
 
 
@@ -196,6 +207,13 @@ def _payment_summary(payments):
                 "payment_method": method,
                 "erp_sync_status": sync_status,
                 "erp_payment_entry": _get_value(payment, "erp_payment_entry"),
+                "erp_payment_entry_docstatus": _int_or_none(
+                    _get_value(payment, "erp_payment_entry_docstatus")
+                ),
+                "erp_payment_submitted_at": _string_or_none(
+                    _get_value(payment, "erp_payment_submitted_at")
+                ),
+                "erp_payment_submit_error": _get_value(payment, "erp_payment_submit_error"),
             }
         )
     return {

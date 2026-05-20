@@ -39,6 +39,22 @@ class PermissionRegistryTest(unittest.TestCase):
         self.assertEqual(checks.get_permissions_for_roles(["Mystery Role"]), [])
         self.assertFalse(checks.has_permission(["Mystery Role"], "orders.create"))
 
+    def test_accounting_finalize_is_restricted_to_accountant_and_full_access(self):
+        self.assertTrue(checks.has_permission(["Madar Accountant"], "accounting.finalize"))
+        self.assertTrue(checks.has_permission(["Madar Admin"], "accounting.finalize"))
+        self.assertTrue(checks.has_permission(["System Manager"], "accounting.finalize"))
+
+        denied_roles = [
+            "Madar Cashier",
+            "Madar Branch User",
+            "Madar Branch Supervisor",
+            "Madar Driver",
+            "Madar Employee",
+        ]
+        for role in denied_roles:
+            with self.subTest(role=role):
+                self.assertFalse(checks.has_permission([role], "accounting.finalize"))
+
     def test_context_helper_does_not_expose_credentials(self):
         context = checks.build_user_context(
             user="mobile@example.com",

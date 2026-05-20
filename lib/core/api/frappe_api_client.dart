@@ -596,7 +596,9 @@ class FrappeApiClient {
 
   Future<AccountingReviewSummaryList> listOrdersForAccountingReview() async {
     final response = await _httpClient.get(
-      _methodUri('madar.api.accounting_review.list_orders_for_accounting_review'),
+      _methodUri(
+        'madar.api.accounting_review.list_orders_for_accounting_review',
+      ),
       headers: _headers(),
     );
     _throwIfFailed(response, fallback: 'تعذر تحميل مراجعة الإقفال');
@@ -638,6 +640,58 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر تسجيل ملاحظة المراجعة');
     return AccountingReviewSummary.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<AccountingFinalizationStatus> getFinalizationStatus(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_finalization.get_finalization_status'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل حالة الإقفال النهائي');
+    return AccountingFinalizationStatus.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<AccountingOrderSummary> submitFinalSalesInvoice(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_finalization.submit_sales_invoice'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر اعتماد فاتورة ERP');
+    return AccountingOrderSummary.fromMap(
+      _map(_safeEnvelope(response)['data']),
+    );
+  }
+
+  Future<AccountingFinalizationPaymentList> submitPaymentEntries(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_finalization.submit_payment_entries'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر اعتماد سندات الدفع');
+    return AccountingFinalizationPaymentList.fromEnvelope(
+      _safeEnvelope(response),
+    );
+  }
+
+  Future<AccountingFinalizationStatus> finalizeOrderAccounting(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_finalization.finalize_order_accounting'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إنهاء الإقفال المحاسبي');
+    return AccountingFinalizationStatus.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<ProductList> listProducts({String search = ''}) async {

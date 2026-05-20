@@ -52,6 +52,7 @@ class ErpSyncServiceTest(unittest.TestCase):
                 "erp_sales_order",
                 "erp_sales_order_docstatus",
                 "erp_sales_invoice",
+                "erp_sales_invoice_docstatus",
                 "erp_invoice_sync_status",
                 "erp_invoice_sync_error",
                 "erp_invoice_created_at",

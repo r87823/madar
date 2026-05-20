@@ -6,9 +6,14 @@ import 'erp_sync_models.dart';
 import 'payment_sync_models.dart';
 
 class ErpSyncReviewScreen extends StatefulWidget {
-  const ErpSyncReviewScreen({required this.apiClient, super.key});
+  const ErpSyncReviewScreen({
+    required this.apiClient,
+    this.permissions = const [],
+    super.key,
+  });
 
   final FrappeApiClient apiClient;
+  final List<String> permissions;
 
   @override
   State<ErpSyncReviewScreen> createState() => _ErpSyncReviewScreenState();
@@ -29,6 +34,13 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
   String? _retryingPayment;
   String? _reviewingOrder;
   String? _markingAttentionOrder;
+  String? _submittingInvoiceOrder;
+  String? _submittingPaymentEntriesOrder;
+  String? _finalizingOrder;
+
+  bool get _canFinalize =>
+      widget.permissions.contains('accounting.finalize') ||
+      widget.permissions.contains('system.full_access');
 
   @override
   void initState() {
@@ -125,13 +137,28 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _AccountingReviewCard(
                       summary: summary,
+                      canFinalize: _canFinalize,
                       isReviewing: _reviewingOrder == summary.order.name,
                       isMarkingAttention:
                           _markingAttentionOrder == summary.order.name,
+                      isSubmittingInvoice:
+                          _submittingInvoiceOrder == summary.order.name,
+                      isSubmittingPaymentEntries:
+                          _submittingPaymentEntriesOrder == summary.order.name,
+                      isFinalizing: _finalizingOrder == summary.order.name,
                       onReviewed: summary.canMarkReviewed
                           ? () => _markReviewed(summary)
                           : null,
                       onNeedsAttention: () => _markNeedsAttention(summary),
+                      onSubmitInvoice: _canFinalize
+                          ? () => _confirmAndSubmitInvoice(summary)
+                          : null,
+                      onSubmitPaymentEntries: _canFinalize
+                          ? () => _confirmAndSubmitPaymentEntries(summary)
+                          : null,
+                      onFinalizeAccounting: _canFinalize
+                          ? () => _confirmAndFinalizeAccounting(summary)
+                          : null,
                     ),
                   ),
                 ),
@@ -175,8 +202,8 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
       final orders = await widget.apiClient.listErpSyncOrders();
       final invoiceOrders = await widget.apiClient.listInvoiceSyncOrders();
       final payments = await widget.apiClient.listPaymentSyncItems();
-      final accountingReviews =
-          await widget.apiClient.listOrdersForAccountingReview();
+      final accountingReviews = await widget.apiClient
+          .listOrdersForAccountingReview();
       if (!mounted) return;
       setState(() {
         _orders = orders;
@@ -371,6 +398,130 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
       }
     }
   }
+
+  Future<bool> _confirmFinalAction() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد محاسبي'),
+        content: const Text(
+          'هذا الإجراء قد يؤثر على القيود المحاسبية في ERPNext. هل أنت متأكد؟',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('تأكيد'),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
+  }
+
+  Future<void> _confirmAndSubmitInvoice(AccountingReviewSummary summary) async {
+    if (!await _confirmFinalAction()) return;
+    setState(() {
+      _submittingInvoiceOrder = summary.order.name;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final result = await widget.apiClient.submitFinalSalesInvoice(
+        summary.order.name,
+      );
+      if (!mounted) return;
+      setState(() {
+        _message = result.erpSalesInvoiceDocstatus == 1
+            ? 'تم اعتماد فاتورة ERP'
+            : 'تم تحديث حالة فاتورة ERP';
+      });
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submittingInvoiceOrder = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmAndSubmitPaymentEntries(
+    AccountingReviewSummary summary,
+  ) async {
+    if (!await _confirmFinalAction()) return;
+    setState(() {
+      _submittingPaymentEntriesOrder = summary.order.name;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final result = await widget.apiClient.submitPaymentEntries(
+        summary.order.name,
+      );
+      if (!mounted) return;
+      setState(() {
+        _message = 'تم اعتماد سندات الدفع: ${result.items.length}';
+      });
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submittingPaymentEntriesOrder = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _confirmAndFinalizeAccounting(
+    AccountingReviewSummary summary,
+  ) async {
+    if (!await _confirmFinalAction()) return;
+    setState(() {
+      _finalizingOrder = summary.order.name;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final result = await widget.apiClient.finalizeOrderAccounting(
+        summary.order.name,
+      );
+      if (!mounted) return;
+      setState(() {
+        _message = result.finalized
+            ? 'تم إنهاء الإقفال المحاسبي'
+            : 'تم تحديث الإقفال';
+      });
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _finalizingOrder = null;
+        });
+      }
+    }
+  }
 }
 
 class _SyncOrderCard extends StatelessWidget {
@@ -542,7 +693,10 @@ class _InvoiceSyncOrderCard extends StatelessWidget {
             _Line(label: 'التسليم', value: order.deliveryStatus ?? '-'),
             if (order.erpSalesOrder?.isNotEmpty == true) ...[
               _Line(label: 'طلب ERP', value: order.erpSalesOrder!),
-              _Line(label: 'حالة أمر البيع', value: order.salesOrderStatusLabel),
+              _Line(
+                label: 'حالة أمر البيع',
+                value: order.salesOrderStatusLabel,
+              ),
             ],
             if (order.erpSalesInvoice?.isNotEmpty == true)
               _Line(label: 'فاتورة ERP', value: order.erpSalesInvoice!),
@@ -583,17 +737,31 @@ class _InvoiceSyncOrderCard extends StatelessWidget {
 class _AccountingReviewCard extends StatelessWidget {
   const _AccountingReviewCard({
     required this.summary,
+    required this.canFinalize,
     required this.isReviewing,
     required this.isMarkingAttention,
+    required this.isSubmittingInvoice,
+    required this.isSubmittingPaymentEntries,
+    required this.isFinalizing,
     required this.onReviewed,
     required this.onNeedsAttention,
+    required this.onSubmitInvoice,
+    required this.onSubmitPaymentEntries,
+    required this.onFinalizeAccounting,
   });
 
   final AccountingReviewSummary summary;
+  final bool canFinalize;
   final bool isReviewing;
   final bool isMarkingAttention;
+  final bool isSubmittingInvoice;
+  final bool isSubmittingPaymentEntries;
+  final bool isFinalizing;
   final VoidCallback? onReviewed;
   final VoidCallback onNeedsAttention;
+  final VoidCallback? onSubmitInvoice;
+  final VoidCallback? onSubmitPaymentEntries;
+  final VoidCallback? onFinalizeAccounting;
 
   @override
   Widget build(BuildContext context) {
@@ -610,7 +778,9 @@ class _AccountingReviewCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    order.customerName.isEmpty ? order.name : order.customerName,
+                    order.customerName.isEmpty
+                        ? order.name
+                        : order.customerName,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -623,7 +793,10 @@ class _AccountingReviewCard extends StatelessWidget {
             _Line(label: 'الطلب', value: order.name),
             _Line(label: 'الإجمالي', value: order.subtotal.toStringAsFixed(2)),
             _Line(label: 'المدفوع', value: order.paidAmount.toStringAsFixed(2)),
-            _Line(label: 'المتبقي', value: order.remainingAmount.toStringAsFixed(2)),
+            _Line(
+              label: 'المتبقي',
+              value: order.remainingAmount.toStringAsFixed(2),
+            ),
             const Divider(height: 20),
             _Line(
               label: 'أمر البيع',
@@ -634,10 +807,25 @@ class _AccountingReviewCard extends StatelessWidget {
               value: summary.erpSalesInvoice.erpSalesInvoice ?? '-',
             ),
             _Line(
+              label: 'حالة الفاتورة',
+              value: summary.erpSalesInvoice.erpSalesInvoiceDocstatus == 1
+                  ? 'معتمد'
+                  : 'مسودة',
+            ),
+            _Line(
               label: 'المدفوعات',
               value:
                   '${summary.payments.count} / ${summary.payments.totalCollected.toStringAsFixed(2)}',
             ),
+            if (summary.payments.items.isNotEmpty)
+              _Line(
+                label: 'سندات الدفع',
+                value: summary.payments.items
+                    .map(
+                      (payment) => '${payment.name}: ${payment.docstatusLabel}',
+                    )
+                    .join('، '),
+              ),
             _Line(
               label: 'الصندوق',
               value: summary.cashbox.statuses.isEmpty
@@ -664,6 +852,16 @@ class _AccountingReviewCard extends StatelessWidget {
               _Line(label: 'التنبيهات', value: summary.alerts.join(', ')),
             if (summary.accountingReviewNotes?.isNotEmpty == true)
               _Line(label: 'ملاحظات', value: summary.accountingReviewNotes!),
+            if (summary.accountingFinalizedAt?.isNotEmpty == true)
+              _Line(
+                label: 'الإقفال',
+                value: 'مقفل محاسبيًا ${summary.accountingFinalizedAt}',
+              ),
+            if (summary.accountingFinalizationError?.isNotEmpty == true)
+              _Line(
+                label: 'خطأ الإقفال',
+                value: summary.accountingFinalizationError!,
+              ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -679,6 +877,25 @@ class _AccountingReviewCard extends StatelessWidget {
                   icon: const Icon(Icons.report_problem_outlined),
                   label: const Text('يحتاج مراجعة / ملاحظة'),
                 ),
+                if (canFinalize) ...[
+                  FilledButton.icon(
+                    onPressed: isSubmittingInvoice ? null : onSubmitInvoice,
+                    icon: const Icon(Icons.receipt_long),
+                    label: const Text('اعتماد فاتورة ERP'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: isSubmittingPaymentEntries
+                        ? null
+                        : onSubmitPaymentEntries,
+                    icon: const Icon(Icons.payments),
+                    label: const Text('اعتماد سندات الدفع'),
+                  ),
+                  FilledButton.icon(
+                    onPressed: isFinalizing ? null : onFinalizeAccounting,
+                    icon: const Icon(Icons.lock),
+                    label: const Text('إنهاء الإقفال المحاسبي'),
+                  ),
+                ],
               ],
             ),
           ],

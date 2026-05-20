@@ -46,6 +46,7 @@ ORDER_FIELDS = [
     "erp_sales_order",
     "erp_sales_order_docstatus",
     "erp_sales_invoice",
+    "erp_sales_invoice_docstatus",
     "erp_invoice_sync_status",
     "erp_invoice_sync_error",
     "erp_invoice_created_at",
@@ -53,6 +54,9 @@ ORDER_FIELDS = [
     "accounting_review_notes",
     "accounting_reviewed_by",
     "accounting_reviewed_at",
+    "accounting_finalized_at",
+    "accounting_finalized_by",
+    "accounting_finalization_error",
     "creation",
     "modified",
 ]
@@ -286,6 +290,7 @@ def _approval_transition(user, order_name, next_status, action, reason="", frapp
         doc.erp_sales_order = None
         doc.erp_sales_order_docstatus = None
         doc.erp_sales_invoice = None
+        doc.erp_sales_invoice_docstatus = None
         doc.erp_invoice_sync_status = "pending"
         doc.erp_invoice_sync_error = None
         doc.erp_invoice_created_at = None
@@ -293,6 +298,9 @@ def _approval_transition(user, order_name, next_status, action, reason="", frapp
         doc.accounting_review_notes = None
         doc.accounting_reviewed_by = None
         doc.accounting_reviewed_at = None
+        doc.accounting_finalized_at = None
+        doc.accounting_finalized_by = None
+        doc.accounting_finalization_error = None
     elif next_status == "returned_for_edit":
         doc.returned_at = now
         doc.approval_reason = (reason or "").strip()
@@ -403,6 +411,9 @@ def _serialize_order(order):
         if _get_value(order, "erp_sales_order_docstatus") not in {None, ""}
         else None,
         "erp_sales_invoice": _get_value(order, "erp_sales_invoice"),
+        "erp_sales_invoice_docstatus": int(_float(_get_value(order, "erp_sales_invoice_docstatus")))
+        if _get_value(order, "erp_sales_invoice_docstatus") not in {None, ""}
+        else None,
         "erp_invoice_sync_status": _get_value(order, "erp_invoice_sync_status"),
         "erp_invoice_sync_error": _get_value(order, "erp_invoice_sync_error"),
         "erp_invoice_created_at": _string_or_none(_get_value(order, "erp_invoice_created_at")),
@@ -410,6 +421,9 @@ def _serialize_order(order):
         "accounting_review_notes": _get_value(order, "accounting_review_notes"),
         "accounting_reviewed_by": _get_value(order, "accounting_reviewed_by"),
         "accounting_reviewed_at": _string_or_none(_get_value(order, "accounting_reviewed_at")),
+        "accounting_finalized_at": _string_or_none(_get_value(order, "accounting_finalized_at")),
+        "accounting_finalized_by": _get_value(order, "accounting_finalized_by"),
+        "accounting_finalization_error": _get_value(order, "accounting_finalization_error"),
         "creation": _string_or_none(_get_value(order, "creation")),
         "modified": _string_or_none(_get_value(order, "modified")),
     }

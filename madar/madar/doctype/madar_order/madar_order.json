@@ -44,13 +44,17 @@
     "erp_sales_order",
     "erp_sales_order_docstatus",
     "erp_sales_invoice",
+    "erp_sales_invoice_docstatus",
     "erp_invoice_sync_status",
     "erp_invoice_sync_error",
     "erp_invoice_created_at",
     "accounting_status",
     "accounting_review_notes",
     "accounting_reviewed_by",
-    "accounting_reviewed_at"
+    "accounting_reviewed_at",
+    "accounting_finalized_at",
+    "accounting_finalized_by",
+    "accounting_finalization_error"
   ],
   "fields": [
     {
@@ -299,6 +303,12 @@
       "read_only": 1
     },
     {
+      "fieldname": "erp_sales_invoice_docstatus",
+      "fieldtype": "Int",
+      "label": "ERP Sales Invoice Docstatus",
+      "read_only": 1
+    },
+    {
       "fieldname": "erp_invoice_sync_status",
       "fieldtype": "Select",
       "label": "ERP Invoice Sync Status",
@@ -341,6 +351,24 @@
       "fieldname": "accounting_reviewed_at",
       "fieldtype": "Datetime",
       "label": "Accounting Reviewed At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accounting_finalized_at",
+      "fieldtype": "Datetime",
+      "label": "Accounting Finalized At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accounting_finalized_by",
+      "fieldtype": "Data",
+      "label": "Accounting Finalized By",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accounting_finalization_error",
+      "fieldtype": "Small Text",
+      "label": "Accounting Finalization Error",
       "read_only": 1
     }
   ],

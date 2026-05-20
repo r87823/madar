@@ -81,6 +81,14 @@ R6-T05 adds Madar-only accounting finalization review summaries. The summary che
 
 This phase is review/summary only. It must not submit ERPNext Sales Invoices, submit Payment Entries, post GL entries, create Delivery Notes, move stock, allocate payments, close ERP accounting periods, or create refund/cancellation workflows.
 
+### ERP Final Submit
+
+R6-T06 adds accounting-controlled final submit actions for already prepared ERPNext accounting documents. Madar may submit an existing draft ERPNext `Sales Invoice` and existing draft ERPNext `Payment Entry` records only after the Madar order is operationally complete, the ERP Sales Order is submitted, the order is paid, and cashbox review is complete for cash payments.
+
+This phase is the first workflow that may create ERPNext GL Entries through standard ERPNext document submit behavior. It is never automatic: Flutter can request finalization only through Madar APIs, and only users with `accounting.finalize` or `system.full_access` can perform submit/finalize actions. Madar stores safe finalization metadata and safe errors on `Madar Order` and `Madar Payment`.
+
+R6-T06 must not create Delivery Notes, Stock Entries, refunds, cancellations, credit notes, or background auto-submit jobs. It must not silently modify submitted ERP documents.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

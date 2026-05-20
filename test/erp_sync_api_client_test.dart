@@ -21,7 +21,10 @@ void main() {
             'message': {
               'ok': true,
               'data': {
-                'items': request.url.path.endsWith('list_orders_for_accounting_review')
+                'items':
+                    request.url.path.endsWith(
+                      'list_orders_for_accounting_review',
+                    )
                     ? [_accountingSummaryMap()]
                     : [_syncOrderMap()],
               },
@@ -31,9 +34,35 @@ void main() {
         }
         if (request.url.path.endsWith('get_order_accounting_summary') ||
             request.url.path.endsWith('mark_accounting_reviewed') ||
-            request.url.path.endsWith('mark_accounting_needs_attention')) {
+            request.url.path.endsWith('mark_accounting_needs_attention') ||
+            request.url.path.endsWith('submit_sales_invoice')) {
           return _jsonResponse({
-            'message': {'ok': true, 'data': _accountingSummaryMap(), 'error': null},
+            'message': {
+              'ok': true,
+              'data': _accountingSummaryMap(),
+              'error': null,
+            },
+          });
+        }
+        if (request.url.path.endsWith('get_finalization_status') ||
+            request.url.path.endsWith('finalize_order_accounting')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': _finalizationStatusMap(),
+              'error': null,
+            },
+          });
+        }
+        if (request.url.path.endsWith('submit_payment_entries')) {
+          return _jsonResponse({
+            'message': {
+              'ok': true,
+              'data': {
+                'items': [_paymentItemMap()],
+              },
+              'error': null,
+            },
           });
         }
         return _jsonResponse({
@@ -53,6 +82,10 @@ void main() {
     await client.getOrderAccountingSummary('MADAR-ORD-1');
     await client.markAccountingReviewed('MADAR-ORD-1');
     await client.markAccountingNeedsAttention('MADAR-ORD-1', 'راجع الصندوق');
+    await client.getFinalizationStatus('MADAR-ORD-1');
+    await client.submitFinalSalesInvoice('MADAR-ORD-1');
+    await client.submitPaymentEntries('MADAR-ORD-1');
+    await client.finalizeOrderAccounting('MADAR-ORD-1');
 
     expect(
       requests[0].url.path,
@@ -102,6 +135,22 @@ void main() {
     );
     expect(requests[10].bodyFields['notes'], 'راجع الصندوق');
     expect(
+      requests[11].url.path,
+      '/api/method/madar.api.accounting_finalization.get_finalization_status',
+    );
+    expect(
+      requests[12].url.path,
+      '/api/method/madar.api.accounting_finalization.submit_sales_invoice',
+    );
+    expect(
+      requests[13].url.path,
+      '/api/method/madar.api.accounting_finalization.submit_payment_entries',
+    );
+    expect(
+      requests[14].url.path,
+      '/api/method/madar.api.accounting_finalization.finalize_order_accounting',
+    );
+    expect(
       requests.any((request) => request.url.path.contains('/api/resource')),
       isFalse,
     );
@@ -129,6 +178,7 @@ Map<String, dynamic> _accountingSummaryMap() {
     },
     'erp_sales_invoice': {
       'erp_sales_invoice': 'ACC-SINV-1',
+      'erp_sales_invoice_docstatus': 0,
       'erp_invoice_sync_status': 'synced',
       'erp_invoice_sync_error': null,
     },
@@ -137,7 +187,7 @@ Map<String, dynamic> _accountingSummaryMap() {
       'total_collected': 100,
       'methods': {'cash': 100},
       'erp_sync_statuses': {'synced': 1},
-      'items': [],
+      'items': [_paymentItemMap()],
     },
     'cashbox': {
       'cash_payments_total': 100,
@@ -159,6 +209,37 @@ Map<String, dynamic> _accountingSummaryMap() {
     'accounting_review_notes': null,
     'accounting_reviewed_by': null,
     'accounting_reviewed_at': null,
+    'accounting_finalized_at': null,
+    'accounting_finalized_by': null,
+    'accounting_finalization_error': null,
+  };
+}
+
+Map<String, dynamic> _finalizationStatusMap() {
+  return {
+    'order': _accountingSummaryMap()['order'],
+    'can_finalize': true,
+    'erp_sales_invoice_docstatus': 1,
+    'payments': [_paymentItemMap(erpPaymentEntryDocstatus: 1)],
+    'finalized': true,
+    'accounting_finalized_at': '2026-05-20 16:00:00',
+    'accounting_finalized_by': 'accountant.test@example.com',
+    'accounting_finalization_error': null,
+  };
+}
+
+Map<String, dynamic> _paymentItemMap({int erpPaymentEntryDocstatus = 0}) {
+  return {
+    'name': 'PAY-1',
+    'amount': 100,
+    'payment_method': 'cash',
+    'erp_sync_status': 'synced',
+    'erp_payment_entry': 'ACC-PAY-1',
+    'erp_payment_entry_docstatus': erpPaymentEntryDocstatus,
+    'erp_payment_submitted_at': erpPaymentEntryDocstatus == 1
+        ? '2026-05-20 16:00:00'
+        : null,
+    'erp_payment_submit_error': null,
   };
 }
 

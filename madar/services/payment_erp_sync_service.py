@@ -20,6 +20,9 @@ SYNC_PAYMENT_FIELDS = [
     "erp_sync_status",
     "erp_sync_error",
     "erp_payment_entry",
+    "erp_payment_entry_docstatus",
+    "erp_payment_submitted_at",
+    "erp_payment_submit_error",
     "modified",
 ]
 MODE_OF_PAYMENT = {
@@ -199,6 +202,8 @@ def mark_payment_sync_success(payment_name, payment_entry_name, frappe_module=No
     payment.erp_sync_status = "synced"
     payment.erp_sync_error = ""
     payment.erp_payment_entry = (payment_entry_name or "").strip()
+    payment.erp_payment_entry_docstatus = 0
+    payment.erp_payment_submit_error = ""
     payment.save(ignore_permissions=True)
     _audit(payment, "mark_payment_sync_success")
     _commit(frappe_module)
@@ -325,6 +330,11 @@ def _serialize_payment(payment, frappe_module, order=None):
         "erp_sync_status": _get_value(payment, "erp_sync_status") or "pending",
         "erp_sync_error": _get_value(payment, "erp_sync_error"),
         "erp_payment_entry": _get_value(payment, "erp_payment_entry"),
+        "erp_payment_entry_docstatus": int(_float(_get_value(payment, "erp_payment_entry_docstatus")))
+        if _get_value(payment, "erp_payment_entry_docstatus") not in {None, ""}
+        else None,
+        "erp_payment_submitted_at": _string_or_none(_get_value(payment, "erp_payment_submitted_at")),
+        "erp_payment_submit_error": _get_value(payment, "erp_payment_submit_error"),
     }
 
 
