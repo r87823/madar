@@ -14,7 +14,8 @@ void main() {
       sessionStore: MemorySessionStore(sid: 'abc123'),
       httpClient: MockClient((request) async {
         requests.add(request);
-        if (request.url.path.endsWith('list_sync_orders')) {
+        if (request.url.path.endsWith('list_sync_orders') ||
+            request.url.path.endsWith('list_invoice_sync_orders')) {
           return _jsonResponse({
             'message': {
               'ok': true,
@@ -34,6 +35,10 @@ void main() {
     await client.listErpSyncOrders();
     await client.getErpSyncOrder('MADAR-ORD-1');
     await client.retryErpSyncOrder('MADAR-ORD-1');
+    await client.submitErpSalesOrder('MADAR-ORD-1');
+    await client.listInvoiceSyncOrders();
+    await client.getInvoiceSyncOrder('MADAR-ORD-1');
+    await client.retryInvoiceSync('MADAR-ORD-1');
 
     expect(
       requests[0].url.path,
@@ -48,6 +53,23 @@ void main() {
       '/api/method/madar.api.erp_sync.retry_sync_order',
     );
     expect(requests[2].bodyFields['order_name'], 'MADAR-ORD-1');
+    expect(
+      requests[3].url.path,
+      '/api/method/madar.api.erp_sync.submit_erp_sales_order',
+    );
+    expect(
+      requests[4].url.path,
+      '/api/method/madar.api.erp_sync.list_invoice_sync_orders',
+    );
+    expect(
+      requests[5].url.path,
+      '/api/method/madar.api.erp_sync.get_invoice_sync_order',
+    );
+    expect(
+      requests[6].url.path,
+      '/api/method/madar.api.erp_sync.retry_invoice_sync',
+    );
+    expect(requests[6].bodyFields['order_name'], 'MADAR-ORD-1');
     expect(
       requests.any((request) => request.url.path.contains('/api/resource')),
       isFalse,

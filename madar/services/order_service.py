@@ -44,6 +44,11 @@ ORDER_FIELDS = [
     "erp_sync_status",
     "erp_sync_error",
     "erp_sales_order",
+    "erp_sales_order_docstatus",
+    "erp_sales_invoice",
+    "erp_invoice_sync_status",
+    "erp_invoice_sync_error",
+    "erp_invoice_created_at",
     "creation",
     "modified",
 ]
@@ -275,6 +280,11 @@ def _approval_transition(user, order_name, next_status, action, reason="", frapp
         doc.erp_sync_status = "pending"
         doc.erp_sync_error = None
         doc.erp_sales_order = None
+        doc.erp_sales_order_docstatus = None
+        doc.erp_sales_invoice = None
+        doc.erp_invoice_sync_status = "pending"
+        doc.erp_invoice_sync_error = None
+        doc.erp_invoice_created_at = None
     elif next_status == "returned_for_edit":
         doc.returned_at = now
         doc.approval_reason = (reason or "").strip()
@@ -381,6 +391,13 @@ def _serialize_order(order):
         "erp_sync_status": _get_value(order, "erp_sync_status"),
         "erp_sync_error": _get_value(order, "erp_sync_error"),
         "erp_sales_order": _get_value(order, "erp_sales_order"),
+        "erp_sales_order_docstatus": int(_float(_get_value(order, "erp_sales_order_docstatus")))
+        if _get_value(order, "erp_sales_order_docstatus") not in {None, ""}
+        else None,
+        "erp_sales_invoice": _get_value(order, "erp_sales_invoice"),
+        "erp_invoice_sync_status": _get_value(order, "erp_invoice_sync_status"),
+        "erp_invoice_sync_error": _get_value(order, "erp_invoice_sync_error"),
+        "erp_invoice_created_at": _string_or_none(_get_value(order, "erp_invoice_created_at")),
         "creation": _string_or_none(_get_value(order, "creation")),
         "modified": _string_or_none(_get_value(order, "modified")),
     }

@@ -46,9 +46,15 @@ class ErpSyncServiceTest(unittest.TestCase):
                 "customer_name",
                 "subtotal",
                 "order_status",
+                "delivery_status",
                 "erp_sync_status",
                 "erp_sync_error",
                 "erp_sales_order",
+                "erp_sales_order_docstatus",
+                "erp_sales_invoice",
+                "erp_invoice_sync_status",
+                "erp_invoice_sync_error",
+                "erp_invoice_created_at",
                 "approved_at",
                 "approved_by",
             },
@@ -283,6 +289,181 @@ class ErpSyncServiceTest(unittest.TestCase):
         self.assertEqual(result["error"]["code"], "ORDER_ALREADY_SYNCED")
         self.assertEqual(fake_frappe.created_sales_orders, [])
 
+    def test_submit_erp_sales_order_submits_draft_and_is_idempotent(self):
+        fake_frappe = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-1",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-00001",
+                    erp_sales_order_docstatus=0,
+                )
+            ],
+            sales_orders=[{"name": "SAL-ORD-00001", "docstatus": 0}],
+        )
+
+        submitted = erp_sync_service.submit_erp_sales_order(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+        submitted_again = erp_sync_service.submit_erp_sales_order(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(submitted["ok"], True)
+        self.assertEqual(submitted["data"]["erp_sales_order_docstatus"], 1)
+        self.assertEqual(submitted_again["ok"], True)
+        self.assertEqual(submitted_again["data"]["erp_sales_order_docstatus"], 1)
+        self.assertEqual(fake_frappe.sales_orders[0]["submit_count"], 1)
+        self.assertEqual(fake_frappe.created_sales_invoices, [])
+
+    def test_submit_erp_sales_order_requires_existing_erp_sales_order(self):
+        fake_frappe = FakeFrappe(
+            orders=[_sync_order("MADAR-ORD-1", status="approved", items_count=1)]
+        )
+
+        result = erp_sync_service.submit_erp_sales_order(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "ORDER_NOT_SYNCED_TO_ERP")
+
+    def test_validate_invoice_requires_delivery_completion_and_submitted_sales_order(self):
+        draft_sales_order = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-1",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-00001",
+                    erp_sales_order_docstatus=0,
+                    delivery_status="customer_picked_up",
+                )
+            ],
+            sales_orders=[{"name": "SAL-ORD-00001", "docstatus": 0}],
+            items=[_item("LINE-1", "MADAR-ORD-1")],
+        )
+        not_delivered = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-2",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-00002",
+                    erp_sales_order_docstatus=1,
+                    fulfillment_method="customer_delivery",
+                    delivery_status="dispatched_to_customer",
+                )
+            ],
+            sales_orders=[{"name": "SAL-ORD-00002", "docstatus": 1}],
+            items=[_item("LINE-2", "MADAR-ORD-2")],
+        )
+        already_invoiced = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-3",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-00003",
+                    erp_sales_order_docstatus=1,
+                    erp_sales_invoice="ACC-SINV-1",
+                    erp_invoice_sync_status="synced",
+                    delivery_status="customer_picked_up",
+                )
+            ],
+            sales_orders=[{"name": "SAL-ORD-00003", "docstatus": 1}],
+            items=[_item("LINE-3", "MADAR-ORD-3")],
+        )
+
+        self.assertEqual(
+            erp_sync_service.validate_order_ready_for_invoice(
+                "MADAR-ORD-1", frappe_module=draft_sales_order
+            )["error"]["code"],
+            "ORDER_NOT_READY_FOR_INVOICE",
+        )
+        self.assertEqual(
+            erp_sync_service.validate_order_ready_for_invoice(
+                "MADAR-ORD-2", frappe_module=not_delivered
+            )["error"]["code"],
+            "ORDER_NOT_DELIVERED",
+        )
+        self.assertEqual(
+            erp_sync_service.validate_order_ready_for_invoice(
+                "MADAR-ORD-3", frappe_module=already_invoiced
+            )["error"]["code"],
+            "SALES_INVOICE_ALREADY_SYNCED",
+        )
+
+    def test_sync_sales_invoice_creates_draft_invoice_and_saves_reference(self):
+        fake_frappe = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-1",
+                    status="approved",
+                    items_count=1,
+                    subtotal=12.5,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-00001",
+                    erp_sales_order_docstatus=1,
+                    delivery_status="customer_picked_up",
+                )
+            ],
+            sales_orders=[
+                {
+                    "name": "SAL-ORD-00001",
+                    "docstatus": 1,
+                    "customer": "Customer MADAR-ORD-1",
+                    "company": "Madar Co",
+                }
+            ],
+            items=[_item("LINE-1", "MADAR-ORD-1", item_code="MILK-001", qty=1, unit_price=12.5)],
+            today="2026-05-20",
+        )
+
+        result = erp_sync_service.sync_sales_invoice_to_erp(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], True)
+        self.assertEqual(result["data"]["erp_sales_invoice"], "ACC-SINV-00001")
+        self.assertEqual(result["data"]["erp_invoice_sync_status"], "synced")
+        self.assertEqual(fake_frappe.created_sales_invoices[0]["doctype"], "Sales Invoice")
+        self.assertEqual(fake_frappe.created_sales_invoices[0]["docstatus"], 0)
+        self.assertEqual(fake_frappe.created_sales_invoices[0]["items"][0]["sales_order"], "SAL-ORD-00001")
+        self.assertEqual(fake_frappe.submitted_payment_entries, [])
+
+    def test_sync_sales_invoice_tracks_safe_failure(self):
+        fake_frappe = FakeFrappe(
+            orders=[
+                _sync_order(
+                    "MADAR-ORD-1",
+                    status="approved",
+                    items_count=1,
+                    erp_sync_status="synced",
+                    erp_sales_order="SAL-ORD-00001",
+                    erp_sales_order_docstatus=1,
+                    delivery_status="customer_picked_up",
+                )
+            ],
+            sales_orders=[{"name": "SAL-ORD-00001", "docstatus": 1, "customer": "Customer MADAR-ORD-1"}],
+            items=[_item("LINE-1", "MADAR-ORD-1")],
+            insert_error=RuntimeError("Traceback: Missing income account\nsecret-token"),
+        )
+
+        result = erp_sync_service.sync_sales_invoice_to_erp(
+            "MADAR-ORD-1", frappe_module=fake_frappe
+        )
+
+        self.assertEqual(result["ok"], False)
+        self.assertEqual(result["error"]["code"], "ERP_INVOICE_SYNC_FAILED")
+        self.assertEqual(fake_frappe.orders[0]["erp_invoice_sync_status"], "failed")
+        self.assertEqual(fake_frappe.orders[0]["erp_invoice_sync_error"], "Traceback: Missing income account")
+
 
 def _sync_order(
     name,
@@ -292,6 +473,11 @@ def _sync_order(
     subtotal=12.5,
     erp_sync_status="pending",
     erp_sales_order=None,
+    erp_sales_order_docstatus=None,
+    erp_sales_invoice=None,
+    erp_invoice_sync_status="pending",
+    delivery_status="not_ready",
+    fulfillment_method="branch_pickup",
 ):
     order = _order(
         name,
@@ -308,6 +494,13 @@ def _sync_order(
             "erp_sync_status": erp_sync_status,
             "erp_sync_error": None,
             "erp_sales_order": erp_sales_order,
+            "erp_sales_order_docstatus": erp_sales_order_docstatus,
+            "erp_sales_invoice": erp_sales_invoice,
+            "erp_invoice_sync_status": erp_invoice_sync_status,
+            "erp_invoice_sync_error": None,
+            "erp_invoice_created_at": None,
+            "delivery_status": delivery_status,
+            "fulfillment_method": fulfillment_method,
         }
     )
     return order
@@ -352,6 +545,7 @@ class FakeFrappe:
         *,
         orders=None,
         items=None,
+        sales_orders=None,
         today="2026-05-19",
         insert_error=None,
         roles=None,
@@ -360,6 +554,12 @@ class FakeFrappe:
         self.items = list(items or [])
         self.roles = roles or ["Madar Accountant"]
         self.created_sales_orders = []
+        self.created_sales_invoices = []
+        self.submitted_payment_entries = []
+        self.sales_orders = [
+            dict(row, submit_count=row.get("submit_count", 0))
+            for row in (sales_orders or [])
+        ]
         self.today = today
         self.insert_error = insert_error
         self.audit_events = []
@@ -373,11 +573,17 @@ class FakeFrappe:
         if isinstance(doctype_or_values, dict):
             if doctype_or_values.get("doctype") == "Sales Order":
                 return FakeSalesOrderDoc(self, dict(doctype_or_values))
-            raise AssertionError("ERP sync boundary must only create Sales Order documents")
+            if doctype_or_values.get("doctype") == "Sales Invoice":
+                return FakeSalesInvoiceDoc(self, dict(doctype_or_values))
+            raise AssertionError("ERP sync boundary must only create allowed ERP documents")
         if doctype_or_values == "Madar Order":
             for row in self.orders:
                 if row["name"] == name:
                     return FakeOrderDoc(self, row)
+        if doctype_or_values == "Sales Order":
+            for row in self.sales_orders:
+                if row["name"] == name:
+                    return FakeExistingSalesOrderDoc(self, row)
         raise KeyError(name)
 
     def get_all(self, doctype, filters=None, fields=None, order_by=None, limit=20):
@@ -412,6 +618,39 @@ class FakeSalesOrderDoc:
         self.name = f"SAL-ORD-{len(self._fake_frappe.created_sales_orders) + 1:05d}"
         self._values["name"] = self.name
         self._fake_frappe.created_sales_orders.append(self._values)
+        return self
+
+
+class FakeExistingSalesOrderDoc:
+    def __init__(self, fake_frappe, values):
+        self._fake_frappe = fake_frappe
+        self._values = values
+        for key, value in values.items():
+            setattr(self, key, value)
+
+    def submit(self):
+        if self._fake_frappe.insert_error:
+            raise self._fake_frappe.insert_error
+        self.docstatus = 1
+        self._values["docstatus"] = 1
+        self._values["submit_count"] = self._values.get("submit_count", 0) + 1
+        return self
+
+
+class FakeSalesInvoiceDoc:
+    def __init__(self, fake_frappe, values):
+        self._fake_frappe = fake_frappe
+        self._values = values
+        self.name = None
+        for key, value in values.items():
+            setattr(self, key, value)
+
+    def insert(self, ignore_permissions=False):
+        if self._fake_frappe.insert_error:
+            raise self._fake_frappe.insert_error
+        self.name = f"ACC-SINV-{len(self._fake_frappe.created_sales_invoices) + 1:05d}"
+        self._values["name"] = self.name
+        self._fake_frappe.created_sales_invoices.append(self._values)
         return self
 
 

@@ -525,6 +525,45 @@ class FrappeApiClient {
     return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
   }
 
+  Future<ErpSyncOrder> submitErpSalesOrder(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.erp_sync.submit_erp_sales_order'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر اعتماد أمر البيع');
+    return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ErpSyncOrderList> listInvoiceSyncOrders() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.erp_sync.list_invoice_sync_orders'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل مزامنة الفواتير');
+    return ErpSyncOrderList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ErpSyncOrder> getInvoiceSyncOrder(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.erp_sync.get_invoice_sync_order'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل تفاصيل مزامنة الفاتورة');
+    return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<ErpSyncOrder> retryInvoiceSync(String orderName) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.erp_sync.retry_invoice_sync'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر إعادة محاولة مزامنة الفاتورة');
+    return ErpSyncOrder.fromEnvelope(_safeEnvelope(response));
+  }
+
   Future<PaymentSyncItemList> listPaymentSyncItems() async {
     final response = await _httpClient.get(
       _methodUri('madar.api.payment_sync.list_payment_sync_items'),

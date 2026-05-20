@@ -41,7 +41,12 @@
     "payment_status",
     "erp_sync_status",
     "erp_sync_error",
-    "erp_sales_order"
+    "erp_sales_order",
+    "erp_sales_order_docstatus",
+    "erp_sales_invoice",
+    "erp_invoice_sync_status",
+    "erp_invoice_sync_error",
+    "erp_invoice_created_at"
   ],
   "fields": [
     {
@@ -275,6 +280,37 @@
       "fieldname": "erp_sales_order",
       "fieldtype": "Data",
       "label": "ERP Sales Order",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_sales_order_docstatus",
+      "fieldtype": "Int",
+      "label": "ERP Sales Order Docstatus",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_sales_invoice",
+      "fieldtype": "Data",
+      "label": "ERP Sales Invoice",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_invoice_sync_status",
+      "fieldtype": "Select",
+      "label": "ERP Invoice Sync Status",
+      "options": "\npending\nsynced\nfailed",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_invoice_sync_error",
+      "fieldtype": "Small Text",
+      "label": "ERP Invoice Sync Error",
+      "read_only": 1
+    },
+    {
+      "fieldname": "erp_invoice_created_at",
+      "fieldtype": "Datetime",
+      "label": "ERP Invoice Created At",
       "read_only": 1
     }
   ],

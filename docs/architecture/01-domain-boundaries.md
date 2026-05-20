@@ -67,6 +67,14 @@ R6-T03 adds one-way sync from `Madar Payment` to ERPNext `Payment Entry` as draf
 
 This sync requires the related Madar Order to already reference an ERPNext Sales Order. It stores `erp_sync_status`, `erp_sync_error`, and `erp_payment_entry` on the Madar Payment. It must not submit Payment Entries, create Sales Invoices, post GL entries, perform bank reconciliation, modify cashbox approval status, create refunds, or run bidirectional sync.
 
+### Sales Order Submit And Invoice Draft Sync
+
+R6-T04 lets accounting/admin users submit an already synced ERPNext `Sales Order` from Madar review tools, then create a draft ERPNext `Sales Invoice` after the Madar order is operationally complete. Madar remains the operational source; the ERP documents are accounting representations.
+
+Invoice sync is allowed only when the Madar order is approved, has items, references an ERP Sales Order, that Sales Order is submitted, and delivery is complete (`delivered_to_customer` for customer delivery or `customer_picked_up` for branch pickup). The sync stores `erp_sales_order_docstatus`, `erp_sales_invoice`, `erp_invoice_sync_status`, `erp_invoice_sync_error`, and `erp_invoice_created_at` on `Madar Order`.
+
+This phase creates Sales Invoices with `docstatus=0` only. It must not submit Sales Invoices, submit Payment Entries, post GL entries, create Delivery Notes, move stock, allocate payments, create refunds, or run bidirectional sync.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

@@ -85,6 +85,93 @@ void main() {
               headers: {'content-type': 'application/json; charset=utf-8'},
             );
           }
+          if (request.url.path.endsWith('list_invoice_sync_orders')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': {
+                      'items': [
+                        _order(
+                          'MADAR-ORD-INVOICE-PENDING',
+                          'synced',
+                          salesOrder: 'SAL-ORD-2',
+                          salesOrderDocstatus: 0,
+                          invoiceStatus: 'pending',
+                          deliveryStatus: 'customer_picked_up',
+                        ),
+                        _order(
+                          'MADAR-ORD-INVOICE-FAILED',
+                          'synced',
+                          salesOrder: 'SAL-ORD-3',
+                          salesOrderDocstatus: 1,
+                          invoiceStatus: 'failed',
+                          invoiceError: 'Income account missing',
+                          deliveryStatus: 'delivered_to_customer',
+                        ),
+                        _order(
+                          'MADAR-ORD-INVOICE-SYNCED',
+                          'synced',
+                          salesOrder: 'SAL-ORD-4',
+                          salesOrderDocstatus: 1,
+                          invoiceStatus: 'synced',
+                          salesInvoice: 'ACC-SINV-1',
+                          deliveryStatus: 'customer_picked_up',
+                        ),
+                      ],
+                    },
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.url.path.endsWith('submit_erp_sales_order')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': _order(
+                      'MADAR-ORD-INVOICE-PENDING',
+                      'synced',
+                      salesOrder: 'SAL-ORD-2',
+                      salesOrderDocstatus: 1,
+                      invoiceStatus: 'pending',
+                    ),
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.url.path.endsWith('retry_invoice_sync')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': _order(
+                      'MADAR-ORD-INVOICE-FAILED',
+                      'synced',
+                      salesOrder: 'SAL-ORD-3',
+                      salesOrderDocstatus: 1,
+                      invoiceStatus: 'synced',
+                      salesInvoice: 'ACC-SINV-2',
+                    ),
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
           if (request.url.path.endsWith('retry_payment_sync')) {
             return http.Response.bytes(
               utf8.encode(
@@ -148,14 +235,41 @@ void main() {
       expect(find.text('بانتظار المزامنة'), findsOneWidget);
       expect(find.text('فشلت المزامنة'), findsOneWidget);
       expect(find.text('Customer missing'), findsOneWidget);
-      await tester.drag(find.byType(ListView), const Offset(0, -900));
+      await tester.scrollUntilVisible(
+        find.text('فواتير ERP'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('فواتير ERP'), findsOneWidget);
+      expect(find.text('أمر بيع مسودة'), findsOneWidget);
+      expect(find.text('اعتماد أمر البيع'), findsOneWidget);
+      expect(find.text('فشل إنشاء الفاتورة'), findsOneWidget);
+      expect(find.text('Income account missing'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('ACC-SINV-1'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ACC-SINV-1'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('مدفوعات ERP'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('مدفوعات ERP'), findsOneWidget);
       expect(find.text('PAY-PENDING'), findsOneWidget);
       expect(find.text('نقد'), findsOneWidget);
       expect(find.text('إعادة المحاولة'), findsWidgets);
-      await tester.drag(find.byType(ListView), const Offset(0, -420));
+      await tester.scrollUntilVisible(
+        find.text('Payment account missing'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Payment account missing'), findsOneWidget);
@@ -169,15 +283,28 @@ Map<String, dynamic> _order(
   String status, {
   String? error,
   String? salesOrder,
+  int? salesOrderDocstatus,
+  String? invoiceStatus,
+  String? invoiceError,
+  String? salesInvoice,
+  String deliveryStatus = 'ready_for_dispatch',
 }) {
   return {
     'name': name,
     'customer_name': 'عميل $name',
     'subtotal': 12.5,
     'order_status': 'approved',
+    'delivery_status': deliveryStatus,
     'erp_sync_status': status,
     'erp_sync_error': error,
     'erp_sales_order': salesOrder,
+    'erp_sales_order_docstatus': salesOrderDocstatus,
+    'erp_sales_invoice': salesInvoice,
+    'erp_invoice_sync_status': invoiceStatus ?? 'pending',
+    'erp_invoice_sync_error': invoiceError,
+    'erp_invoice_created_at': salesInvoice == null
+        ? null
+        : '2026-05-20 12:00:00',
     'approved_at': '2026-05-19 12:00:00',
     'approved_by': 'branch.supervisor@example.com',
   };

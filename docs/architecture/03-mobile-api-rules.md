@@ -165,9 +165,17 @@ R3-T06 adds authenticated Madar-only ERP sync review endpoints:
 /api/method/madar.api.erp_sync.list_sync_orders
 /api/method/madar.api.erp_sync.get_sync_order
 /api/method/madar.api.erp_sync.retry_sync_order
+/api/method/madar.api.erp_sync.submit_erp_sales_order
+/api/method/madar.api.erp_sync.list_invoice_sync_orders
+/api/method/madar.api.erp_sync.get_invoice_sync_order
+/api/method/madar.api.erp_sync.retry_invoice_sync
 ```
 
-They require `accounting.view_sync_logs` and expose only safe sync fields: order name, customer name, subtotal, order status, ERP sync status, safe ERP sync error, ERP Sales Order reference, approved timestamp, and approver. Retry is allowed only for pending or failed sync rows; synced rows return `ORDER_ALREADY_SYNCED`.
+They require `accounting.view_sync_logs` and expose only safe sync fields: order name, customer name, subtotal, order status, delivery status, ERP sync status, safe ERP sync error, ERP Sales Order reference, Sales Order docstatus, invoice sync status, safe invoice sync error, ERP Sales Invoice reference, approved timestamp, and approver. Retry is allowed only for pending or failed sync rows; synced Sales Order rows return `ORDER_ALREADY_SYNCED`, and already invoiced rows return `SALES_INVOICE_ALREADY_SYNCED`.
+
+R6-T04 allows accounting/admin users to submit a synced ERP Sales Order and create a draft ERP Sales Invoice only after delivery completion. Flutter may call only the Madar review endpoints above. Flutter must not call ERPNext Sales Order or Sales Invoice APIs directly, must not send invoice line/accounting fields, and must not expose a Sales Invoice submit action.
+
+Server-side invoice sync creates ERPNext `Sales Invoice` with `docstatus=0` only. This phase must not submit Sales Invoice, submit Payment Entry, post GL entries, create Delivery Note, move stock, allocate payments, or expose raw ERP exceptions.
 
 ## Production Mapping Endpoints
 
