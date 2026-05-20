@@ -177,6 +177,17 @@ R6-T04 allows accounting/admin users to submit a synced ERP Sales Order and crea
 
 Server-side invoice sync creates ERPNext `Sales Invoice` with `docstatus=0` only. This phase must not submit Sales Invoice, submit Payment Entry, post GL entries, create Delivery Note, move stock, allocate payments, or expose raw ERP exceptions.
 
+R6-T05 adds Madar-only accounting finalization review endpoints:
+
+```text
+/api/method/madar.api.accounting_review.list_orders_for_accounting_review
+/api/method/madar.api.accounting_review.get_order_accounting_summary
+/api/method/madar.api.accounting_review.mark_accounting_reviewed
+/api/method/madar.api.accounting_review.mark_accounting_needs_attention
+```
+
+These endpoints require authentication and `accounting.view_sync_logs` or `system.full_access`. They expose safe summary fields only: Madar Order totals/status, ERP Sales Order sync/submit metadata, ERP Sales Invoice draft sync metadata, payment totals/status summaries, cashbox review summaries, readiness flags, and stable alert codes. Flutter may mark a Madar order as reviewed or needing attention, but it must not expose buttons for submitting Sales Invoice, submitting Payment Entry, posting GL, creating Delivery Note, or moving stock.
+
 ## Production Mapping Endpoints
 
 R4-T01 exposes Madar-only production mapping endpoints:

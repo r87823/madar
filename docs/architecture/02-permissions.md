@@ -141,6 +141,7 @@ R3-T03 approval APIs use:
 - ERP sync boundary helpers must remain internal service methods until a later task defines protected APIs, jobs, and permissions.
 - R3-T05 ERP sync is manual/internal only and has no mobile endpoint. A later task must define explicit admin permissions before exposing sync actions through any API.
 - R3-T06 exposes ERP sync review and retry through Madar APIs for accounting/admin users. These APIs require `accounting.view_sync_logs`; endpoint code delegates to `madar.services.erp_sync_service` and must not check raw roles directly.
+- R6-T05 exposes accounting finalization review summaries and Madar-only review markers through `madar.api.accounting_review`. These APIs require `accounting.view_sync_logs` or `system.full_access`; endpoint code delegates to `madar.services.accounting_review_service` and must not submit ERP documents or check raw roles directly.
 
 ## Production Mapping Permissions
 

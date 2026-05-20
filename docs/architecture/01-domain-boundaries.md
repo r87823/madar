@@ -75,6 +75,12 @@ Invoice sync is allowed only when the Madar order is approved, has items, refere
 
 This phase creates Sales Invoices with `docstatus=0` only. It must not submit Sales Invoices, submit Payment Entries, post GL entries, create Delivery Notes, move stock, allocate payments, create refunds, or run bidirectional sync.
 
+### Accounting Finalization Review
+
+R6-T05 adds Madar-only accounting finalization review summaries. The summary checks operational completion, ERP Sales Order sync/submit status, draft Sales Invoice presence, operational payments, draft Payment Entry sync status, and cashbox review status. It stores only Madar review metadata on `Madar Order`: `accounting_status`, `accounting_review_notes`, `accounting_reviewed_by`, and `accounting_reviewed_at`.
+
+This phase is review/summary only. It must not submit ERPNext Sales Invoices, submit Payment Entries, post GL entries, create Delivery Notes, move stock, allocate payments, close ERP accounting periods, or create refund/cancellation workflows.
+
 ## ERPNext-Owned Domains
 
 ERPNext owns commercial, inventory, accounting, and reporting records:

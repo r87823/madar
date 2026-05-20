@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../auth/session_store.dart';
 import '../auth/user_context.dart';
 import '../../features/accounting/erp_sync_models.dart';
+import '../../features/accounting/accounting_review_models.dart';
 import '../../features/accounting/payment_sync_models.dart';
 import '../../features/attendance/attendance_status.dart';
 import '../../features/cashbox/cashbox_models.dart';
@@ -591,6 +592,52 @@ class FrappeApiClient {
     );
     _throwIfFailed(response, fallback: 'تعذر إعادة محاولة مزامنة الدفع');
     return PaymentSyncItem.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<AccountingReviewSummaryList> listOrdersForAccountingReview() async {
+    final response = await _httpClient.get(
+      _methodUri('madar.api.accounting_review.list_orders_for_accounting_review'),
+      headers: _headers(),
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل مراجعة الإقفال');
+    return AccountingReviewSummaryList.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<AccountingReviewSummary> getOrderAccountingSummary(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_review.get_order_accounting_summary'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تحميل ملخص الإقفال');
+    return AccountingReviewSummary.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<AccountingReviewSummary> markAccountingReviewed(
+    String orderName,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_review.mark_accounting_reviewed'),
+      headers: _headers(),
+      body: {'order_name': orderName},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسجيل المراجعة');
+    return AccountingReviewSummary.fromEnvelope(_safeEnvelope(response));
+  }
+
+  Future<AccountingReviewSummary> markAccountingNeedsAttention(
+    String orderName,
+    String notes,
+  ) async {
+    final response = await _httpClient.post(
+      _methodUri('madar.api.accounting_review.mark_accounting_needs_attention'),
+      headers: _headers(),
+      body: {'order_name': orderName, 'notes': notes},
+    );
+    _throwIfFailed(response, fallback: 'تعذر تسجيل ملاحظة المراجعة');
+    return AccountingReviewSummary.fromEnvelope(_safeEnvelope(response));
   }
 
   Future<ProductList> listProducts({String search = ''}) async {

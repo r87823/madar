@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import 'accounting_review_models.dart';
 import 'erp_sync_models.dart';
 import 'payment_sync_models.dart';
 
@@ -17,6 +18,8 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
   ErpSyncOrderList _orders = const ErpSyncOrderList(items: []);
   ErpSyncOrderList _invoiceOrders = const ErpSyncOrderList(items: []);
   PaymentSyncItemList _payments = const PaymentSyncItemList(items: []);
+  AccountingReviewSummaryList _accountingReviews =
+      const AccountingReviewSummaryList(items: []);
   bool _isLoading = true;
   String? _message;
   bool _isError = false;
@@ -24,6 +27,8 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
   String? _submittingSalesOrder;
   String? _retryingInvoice;
   String? _retryingPayment;
+  String? _reviewingOrder;
+  String? _markingAttentionOrder;
 
   @override
   void initState() {
@@ -106,6 +111,32 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
                 ),
               const SizedBox(height: 8),
               Text(
+                'مراجعة الإقفال',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 12),
+              if (_accountingReviews.items.isEmpty)
+                const _EmptyAccountingReviews()
+              else
+                ..._accountingReviews.items.map(
+                  (summary) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _AccountingReviewCard(
+                      summary: summary,
+                      isReviewing: _reviewingOrder == summary.order.name,
+                      isMarkingAttention:
+                          _markingAttentionOrder == summary.order.name,
+                      onReviewed: summary.canMarkReviewed
+                          ? () => _markReviewed(summary)
+                          : null,
+                      onNeedsAttention: () => _markNeedsAttention(summary),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Text(
                 'مدفوعات ERP',
                 style: Theme.of(
                   context,
@@ -144,11 +175,14 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
       final orders = await widget.apiClient.listErpSyncOrders();
       final invoiceOrders = await widget.apiClient.listInvoiceSyncOrders();
       final payments = await widget.apiClient.listPaymentSyncItems();
+      final accountingReviews =
+          await widget.apiClient.listOrdersForAccountingReview();
       if (!mounted) return;
       setState(() {
         _orders = orders;
         _invoiceOrders = invoiceOrders;
         _payments = payments;
+        _accountingReviews = accountingReviews;
       });
     } catch (error) {
       if (!mounted) return;
@@ -272,6 +306,67 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
       if (mounted) {
         setState(() {
           _retryingInvoice = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _markReviewed(AccountingReviewSummary summary) async {
+    setState(() {
+      _reviewingOrder = summary.order.name;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final result = await widget.apiClient.markAccountingReviewed(
+        summary.order.name,
+      );
+      if (!mounted) return;
+      setState(() {
+        _message = 'تم تحديث المراجعة: ${result.statusLabel}';
+      });
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reviewingOrder = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _markNeedsAttention(AccountingReviewSummary summary) async {
+    setState(() {
+      _markingAttentionOrder = summary.order.name;
+      _message = null;
+      _isError = false;
+    });
+    try {
+      final result = await widget.apiClient.markAccountingNeedsAttention(
+        summary.order.name,
+        'مراجعة محاسبية مطلوبة من التطبيق',
+      );
+      if (!mounted) return;
+      setState(() {
+        _message = 'تم تحديث المراجعة: ${result.statusLabel}';
+      });
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _message = error.toString();
+        _isError = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _markingAttentionOrder = null;
         });
       }
     }
@@ -485,6 +580,126 @@ class _InvoiceSyncOrderCard extends StatelessWidget {
   }
 }
 
+class _AccountingReviewCard extends StatelessWidget {
+  const _AccountingReviewCard({
+    required this.summary,
+    required this.isReviewing,
+    required this.isMarkingAttention,
+    required this.onReviewed,
+    required this.onNeedsAttention,
+  });
+
+  final AccountingReviewSummary summary;
+  final bool isReviewing;
+  final bool isMarkingAttention;
+  final VoidCallback? onReviewed;
+  final VoidCallback onNeedsAttention;
+
+  @override
+  Widget build(BuildContext context) {
+    final order = summary.order;
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    order.customerName.isEmpty ? order.name : order.customerName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                Chip(label: Text(summary.statusLabel)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _Line(label: 'الطلب', value: order.name),
+            _Line(label: 'الإجمالي', value: order.subtotal.toStringAsFixed(2)),
+            _Line(label: 'المدفوع', value: order.paidAmount.toStringAsFixed(2)),
+            _Line(label: 'المتبقي', value: order.remainingAmount.toStringAsFixed(2)),
+            const Divider(height: 20),
+            _Line(
+              label: 'أمر البيع',
+              value: summary.erpSalesOrder.erpSalesOrder ?? '-',
+            ),
+            _Line(
+              label: 'الفاتورة',
+              value: summary.erpSalesInvoice.erpSalesInvoice ?? '-',
+            ),
+            _Line(
+              label: 'المدفوعات',
+              value:
+                  '${summary.payments.count} / ${summary.payments.totalCollected.toStringAsFixed(2)}',
+            ),
+            _Line(
+              label: 'الصندوق',
+              value: summary.cashbox.statuses.isEmpty
+                  ? '-'
+                  : summary.cashbox.statuses.join(', '),
+            ),
+            _ReadinessLine(
+              label: 'التسليم',
+              ok: summary.readiness.deliveredOrPickedUp,
+            ),
+            _ReadinessLine(
+              label: 'مطابقة الدفع',
+              ok: summary.readiness.paymentsMatchOrderTotal,
+            ),
+            _ReadinessLine(
+              label: 'قيود الدفع',
+              ok: summary.readiness.paymentEntriesSyncedOrNotRequired,
+            ),
+            _ReadinessLine(
+              label: 'مراجعة الصندوق',
+              ok: summary.readiness.cashboxesReviewedForCashPayments,
+            ),
+            if (summary.alerts.isNotEmpty)
+              _Line(label: 'التنبيهات', value: summary.alerts.join(', ')),
+            if (summary.accountingReviewNotes?.isNotEmpty == true)
+              _Line(label: 'ملاحظات', value: summary.accountingReviewNotes!),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: isReviewing ? null : onReviewed,
+                  icon: const Icon(Icons.task_alt),
+                  label: const Text('تمّت المراجعة'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: isMarkingAttention ? null : onNeedsAttention,
+                  icon: const Icon(Icons.report_problem_outlined),
+                  label: const Text('يحتاج مراجعة / ملاحظة'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadinessLine extends StatelessWidget {
+  const _ReadinessLine({required this.label, required this.ok});
+
+  final String label;
+  final bool ok;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Line(label: label, value: ok ? 'نعم' : 'لا');
+  }
+}
+
 class _Line extends StatelessWidget {
   const _Line({required this.label, required this.value});
 
@@ -550,6 +765,26 @@ class _EmptySyncPayments extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Text(
           'لا توجد مدفوعات للمزامنة.',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyAccountingReviews extends StatelessWidget {
+  const _EmptyAccountingReviews();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Text(
+          'لا توجد طلبات لمراجعة الإقفال.',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),

@@ -49,6 +49,10 @@ ORDER_FIELDS = [
     "erp_invoice_sync_status",
     "erp_invoice_sync_error",
     "erp_invoice_created_at",
+    "accounting_status",
+    "accounting_review_notes",
+    "accounting_reviewed_by",
+    "accounting_reviewed_at",
     "creation",
     "modified",
 ]
@@ -285,6 +289,10 @@ def _approval_transition(user, order_name, next_status, action, reason="", frapp
         doc.erp_invoice_sync_status = "pending"
         doc.erp_invoice_sync_error = None
         doc.erp_invoice_created_at = None
+        doc.accounting_status = "not_ready"
+        doc.accounting_review_notes = None
+        doc.accounting_reviewed_by = None
+        doc.accounting_reviewed_at = None
     elif next_status == "returned_for_edit":
         doc.returned_at = now
         doc.approval_reason = (reason or "").strip()
@@ -398,6 +406,10 @@ def _serialize_order(order):
         "erp_invoice_sync_status": _get_value(order, "erp_invoice_sync_status"),
         "erp_invoice_sync_error": _get_value(order, "erp_invoice_sync_error"),
         "erp_invoice_created_at": _string_or_none(_get_value(order, "erp_invoice_created_at")),
+        "accounting_status": _get_value(order, "accounting_status"),
+        "accounting_review_notes": _get_value(order, "accounting_review_notes"),
+        "accounting_reviewed_by": _get_value(order, "accounting_reviewed_by"),
+        "accounting_reviewed_at": _string_or_none(_get_value(order, "accounting_reviewed_at")),
         "creation": _string_or_none(_get_value(order, "creation")),
         "modified": _string_or_none(_get_value(order, "modified")),
     }

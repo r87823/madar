@@ -85,6 +85,65 @@ void main() {
               headers: {'content-type': 'application/json; charset=utf-8'},
             );
           }
+          if (request.url.path.endsWith('list_orders_for_accounting_review')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': {
+                      'items': [
+                        _accountingSummary('MADAR-ORD-READY', 'ready_for_review'),
+                        _accountingSummary(
+                          'MADAR-ORD-ATTENTION',
+                          'needs_attention',
+                          alerts: ['CASHBOX_NOT_APPROVED'],
+                          notes: 'راجع الصندوق',
+                        ),
+                      ],
+                    },
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.url.path.endsWith('mark_accounting_reviewed')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': _accountingSummary('MADAR-ORD-READY', 'reviewed'),
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
+          if (request.url.path.endsWith('mark_accounting_needs_attention')) {
+            return http.Response.bytes(
+              utf8.encode(
+                jsonEncode({
+                  'message': {
+                    'ok': true,
+                    'data': _accountingSummary(
+                      'MADAR-ORD-READY',
+                      'needs_attention',
+                      notes: 'مراجعة إضافية',
+                    ),
+                    'error': null,
+                  },
+                }),
+              ),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }
           if (request.url.path.endsWith('list_invoice_sync_orders')) {
             return http.Response.bytes(
               utf8.encode(
@@ -253,7 +312,31 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      expect(find.text('ACC-SINV-1'), findsOneWidget);
+      expect(find.text('ACC-SINV-1'), findsWidgets);
+      await tester.scrollUntilVisible(
+        find.text('مراجعة الإقفال'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('مراجعة الإقفال'), findsOneWidget);
+      expect(find.text('جاهز للمراجعة'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('يحتاج انتباه'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('يحتاج انتباه'), findsOneWidget);
+      expect(find.text('الطلب'), findsWidgets);
+      expect(find.text('أمر البيع'), findsOneWidget);
+      expect(find.text('الفاتورة'), findsOneWidget);
+      expect(find.text('المدفوعات'), findsOneWidget);
+      expect(find.text('الصندوق'), findsOneWidget);
+      expect(find.text('التنبيهات'), findsOneWidget);
+      expect(find.text('تمّت المراجعة'), findsOneWidget);
+      expect(find.text('يحتاج مراجعة / ملاحظة'), findsWidgets);
       await tester.scrollUntilVisible(
         find.text('مدفوعات ERP'),
         500,
@@ -329,5 +412,72 @@ Map<String, dynamic> _payment(
     'erp_payment_entry': paymentEntry,
     'erp_sales_order': 'SAL-ORD-1',
     'reference_no': 'REF-1',
+  };
+}
+
+Map<String, dynamic> _accountingSummary(
+  String orderName,
+  String status, {
+  List<String> alerts = const [],
+  String? notes,
+}) {
+  return {
+    'order': {
+      'name': orderName,
+      'customer_name': 'عميل $orderName',
+      'subtotal': 100,
+      'paid_amount': status == 'ready_for_review' || status == 'reviewed'
+          ? 100
+          : 40,
+      'remaining_amount': status == 'ready_for_review' || status == 'reviewed'
+          ? 0
+          : 60,
+      'payment_status': status == 'ready_for_review' || status == 'reviewed'
+          ? 'paid'
+          : 'partially_paid',
+      'order_status': 'approved',
+      'delivery_status': 'customer_picked_up',
+      'production_status': 'ready',
+    },
+    'erp_sales_order': {
+      'erp_sales_order': 'SAL-ORD-1',
+      'erp_sales_order_docstatus': 1,
+      'erp_sync_status': 'synced',
+      'erp_sync_error': null,
+    },
+    'erp_sales_invoice': {
+      'erp_sales_invoice': 'ACC-SINV-1',
+      'erp_invoice_sync_status': 'synced',
+      'erp_invoice_sync_error': null,
+    },
+    'payments': {
+      'count': 1,
+      'total_collected': status == 'ready_for_review' || status == 'reviewed'
+          ? 100
+          : 40,
+      'methods': {'cash': 40},
+      'erp_sync_statuses': {'synced': 1},
+      'items': [],
+    },
+    'cashbox': {
+      'cash_payments_total': 40,
+      'cashbox_names': ['CASHBOX-1'],
+      'statuses': status == 'needs_attention' ? ['submitted'] : ['approved'],
+      'reviewed': status != 'needs_attention',
+    },
+    'readiness': {
+      'has_erp_sales_order': true,
+      'sales_order_submitted': true,
+      'delivered_or_picked_up': true,
+      'has_sales_invoice_draft': true,
+      'payments_match_order_total': status != 'needs_attention',
+      'payment_entries_synced_or_not_required': true,
+      'cashboxes_reviewed_for_cash_payments': status != 'needs_attention',
+    },
+    'alerts': alerts,
+    'accounting_status': status,
+    'accounting_review_notes': notes,
+    'accounting_reviewed_by': null,
+    'accounting_reviewed_at': null,
   };
 }

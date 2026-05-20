@@ -15,15 +15,25 @@ void main() {
       httpClient: MockClient((request) async {
         requests.add(request);
         if (request.url.path.endsWith('list_sync_orders') ||
-            request.url.path.endsWith('list_invoice_sync_orders')) {
+            request.url.path.endsWith('list_invoice_sync_orders') ||
+            request.url.path.endsWith('list_orders_for_accounting_review')) {
           return _jsonResponse({
             'message': {
               'ok': true,
               'data': {
-                'items': [_syncOrderMap()],
+                'items': request.url.path.endsWith('list_orders_for_accounting_review')
+                    ? [_accountingSummaryMap()]
+                    : [_syncOrderMap()],
               },
               'error': null,
             },
+          });
+        }
+        if (request.url.path.endsWith('get_order_accounting_summary') ||
+            request.url.path.endsWith('mark_accounting_reviewed') ||
+            request.url.path.endsWith('mark_accounting_needs_attention')) {
+          return _jsonResponse({
+            'message': {'ok': true, 'data': _accountingSummaryMap(), 'error': null},
           });
         }
         return _jsonResponse({
@@ -39,6 +49,10 @@ void main() {
     await client.listInvoiceSyncOrders();
     await client.getInvoiceSyncOrder('MADAR-ORD-1');
     await client.retryInvoiceSync('MADAR-ORD-1');
+    await client.listOrdersForAccountingReview();
+    await client.getOrderAccountingSummary('MADAR-ORD-1');
+    await client.markAccountingReviewed('MADAR-ORD-1');
+    await client.markAccountingNeedsAttention('MADAR-ORD-1', 'راجع الصندوق');
 
     expect(
       requests[0].url.path,
@@ -71,10 +85,81 @@ void main() {
     );
     expect(requests[6].bodyFields['order_name'], 'MADAR-ORD-1');
     expect(
+      requests[7].url.path,
+      '/api/method/madar.api.accounting_review.list_orders_for_accounting_review',
+    );
+    expect(
+      requests[8].url.path,
+      '/api/method/madar.api.accounting_review.get_order_accounting_summary',
+    );
+    expect(
+      requests[9].url.path,
+      '/api/method/madar.api.accounting_review.mark_accounting_reviewed',
+    );
+    expect(
+      requests[10].url.path,
+      '/api/method/madar.api.accounting_review.mark_accounting_needs_attention',
+    );
+    expect(requests[10].bodyFields['notes'], 'راجع الصندوق');
+    expect(
       requests.any((request) => request.url.path.contains('/api/resource')),
       isFalse,
     );
   });
+}
+
+Map<String, dynamic> _accountingSummaryMap() {
+  return {
+    'order': {
+      'name': 'MADAR-ORD-1',
+      'customer_name': 'عميل',
+      'subtotal': 100,
+      'paid_amount': 100,
+      'remaining_amount': 0,
+      'payment_status': 'paid',
+      'order_status': 'approved',
+      'delivery_status': 'customer_picked_up',
+      'production_status': 'ready',
+    },
+    'erp_sales_order': {
+      'erp_sales_order': 'SAL-ORD-1',
+      'erp_sales_order_docstatus': 1,
+      'erp_sync_status': 'synced',
+      'erp_sync_error': null,
+    },
+    'erp_sales_invoice': {
+      'erp_sales_invoice': 'ACC-SINV-1',
+      'erp_invoice_sync_status': 'synced',
+      'erp_invoice_sync_error': null,
+    },
+    'payments': {
+      'count': 1,
+      'total_collected': 100,
+      'methods': {'cash': 100},
+      'erp_sync_statuses': {'synced': 1},
+      'items': [],
+    },
+    'cashbox': {
+      'cash_payments_total': 100,
+      'cashbox_names': ['CASHBOX-1'],
+      'statuses': ['approved'],
+      'reviewed': true,
+    },
+    'readiness': {
+      'has_erp_sales_order': true,
+      'sales_order_submitted': true,
+      'delivered_or_picked_up': true,
+      'has_sales_invoice_draft': true,
+      'payments_match_order_total': true,
+      'payment_entries_synced_or_not_required': true,
+      'cashboxes_reviewed_for_cash_payments': true,
+    },
+    'alerts': [],
+    'accounting_status': 'ready_for_review',
+    'accounting_review_notes': null,
+    'accounting_reviewed_by': null,
+    'accounting_reviewed_at': null,
+  };
 }
 
 Map<String, dynamic> _syncOrderMap() {

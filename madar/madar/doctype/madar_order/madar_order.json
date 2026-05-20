@@ -46,7 +46,11 @@
     "erp_sales_invoice",
     "erp_invoice_sync_status",
     "erp_invoice_sync_error",
-    "erp_invoice_created_at"
+    "erp_invoice_created_at",
+    "accounting_status",
+    "accounting_review_notes",
+    "accounting_reviewed_by",
+    "accounting_reviewed_at"
   ],
   "fields": [
     {
@@ -311,6 +315,32 @@
       "fieldname": "erp_invoice_created_at",
       "fieldtype": "Datetime",
       "label": "ERP Invoice Created At",
+      "read_only": 1
+    },
+    {
+      "default": "not_ready",
+      "fieldname": "accounting_status",
+      "fieldtype": "Select",
+      "label": "Accounting Status",
+      "options": "\nnot_ready\nready_for_review\nneeds_attention\nreviewed\nclosed_later",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accounting_review_notes",
+      "fieldtype": "Small Text",
+      "label": "Accounting Review Notes",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accounting_reviewed_by",
+      "fieldtype": "Data",
+      "label": "Accounting Reviewed By",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accounting_reviewed_at",
+      "fieldtype": "Datetime",
+      "label": "Accounting Reviewed At",
       "read_only": 1
     }
   ],
