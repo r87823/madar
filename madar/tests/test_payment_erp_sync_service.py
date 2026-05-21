@@ -25,6 +25,11 @@ class PaymentErpSyncServiceTest(unittest.TestCase):
         fake_frappe = FakeFrappe(
             payments=[_payment("PAY-1", "MADAR-ORD-1", amount=40, method="cash", reference_no="REF-1")],
             orders=[_order("MADAR-ORD-1", erp_sales_order="SAL-ORD-1")],
+            sales_orders=[_sales_order("SAL-ORD-1", customer="Customer MADAR-ORD-1")],
+            accounts=[
+                _account("1110 - Cash - T", "Cash"),
+                _account("1310 - Receivable - T", "Receivable"),
+            ],
         )
 
         result = payment_erp_sync_service.sync_payment_to_erp("PAY-1", frappe_module=fake_frappe)
@@ -41,7 +46,46 @@ class PaymentErpSyncServiceTest(unittest.TestCase):
         self.assertEqual(fake_frappe.payment_entries[0]["received_amount"], 40.0)
         self.assertEqual(fake_frappe.payment_entries[0]["mode_of_payment"], "Cash")
         self.assertEqual(fake_frappe.payment_entries[0]["reference_no"], "REF-1")
+        self.assertEqual(fake_frappe.payment_entries[0]["paid_from_account_currency"], "SAR")
+        self.assertEqual(fake_frappe.payment_entries[0]["paid_to_account_currency"], "SAR")
+        self.assertEqual(fake_frappe.payment_entries[0]["source_exchange_rate"], 1.0)
+        self.assertEqual(fake_frappe.payment_entries[0]["target_exchange_rate"], 1.0)
         self.assertEqual(fake_frappe.sales_invoices, [])
+
+    def test_same_currency_payment_payload_includes_exchange_rate_fields(self):
+        fake_frappe = FakeFrappe(
+            payments=[_payment("PAY-1", "MADAR-ORD-1", amount=40, method="card", reference_no="REF-1")],
+            orders=[_order("MADAR-ORD-1", erp_sales_order="SAL-ORD-1")],
+            sales_orders=[_sales_order("SAL-ORD-1", customer="Customer MADAR-ORD-1")],
+            accounts=[
+                _account("1110 - Bank - T", "Bank"),
+                _account("1310 - Receivable - T", "Receivable"),
+            ],
+        )
+
+        result = payment_erp_sync_service.prepare_payment_entry_payload("PAY-1", frappe_module=fake_frappe)
+
+        self.assertEqual(result["ok"], True)
+        payload = result["data"]
+        self.assertEqual(payload["paid_from_account_currency"], "SAR")
+        self.assertEqual(payload["paid_to_account_currency"], "SAR")
+        self.assertEqual(payload["source_exchange_rate"], 1.0)
+        self.assertEqual(payload["target_exchange_rate"], 1.0)
+
+    def test_missing_payment_account_returns_safe_error_before_creating_payment_entry(self):
+        fake_frappe = FakeFrappe(
+            payments=[_payment("PAY-1", "MADAR-ORD-1", amount=40, method="card", reference_no="REF-1")],
+            orders=[_order("MADAR-ORD-1", erp_sales_order="SAL-ORD-1")],
+            sales_orders=[_sales_order("SAL-ORD-1", customer="Customer MADAR-ORD-1")],
+            accounts=[_account("1310 - Receivable - T", "Receivable")],
+        )
+
+        result = payment_erp_sync_service.sync_payment_to_erp("PAY-1", frappe_module=fake_frappe)
+
+        self.assertEqual(result["error"]["code"], "ERP_PAYMENT_ACCOUNT_UNRESOLVED")
+        self.assertEqual(fake_frappe.payment_entries, [])
+        self.assertEqual(fake_frappe.payments[0]["erp_sync_status"], "failed")
+        self.assertNotIn("Traceback", fake_frappe.payments[0]["erp_sync_error"])
 
     def test_invalid_and_already_synced_payments_are_rejected(self):
         fake_frappe = FakeFrappe(
@@ -75,6 +119,11 @@ class PaymentErpSyncServiceTest(unittest.TestCase):
             fail_payment_entry=True,
             payments=[_payment("PAY-1", "MADAR-ORD-1", amount=40, method="online")],
             orders=[_order("MADAR-ORD-1", erp_sales_order="SAL-ORD-1")],
+            sales_orders=[_sales_order("SAL-ORD-1", customer="Customer MADAR-ORD-1")],
+            accounts=[
+                _account("1110 - Bank - T", "Bank"),
+                _account("1310 - Receivable - T", "Receivable"),
+            ],
         )
 
         result = payment_erp_sync_service.sync_payment_to_erp("PAY-1", frappe_module=fake_frappe)
@@ -90,11 +139,17 @@ class PaymentErpSyncServiceTest(unittest.TestCase):
             roles=["Madar Employee"],
             payments=[_payment("PAY-1", "MADAR-ORD-1", amount=40, method="cash")],
             orders=[_order("MADAR-ORD-1", erp_sales_order="SAL-ORD-1")],
+            sales_orders=[_sales_order("SAL-ORD-1", customer="Customer MADAR-ORD-1")],
         )
         allowed = FakeFrappe(
             roles=["Madar Accountant"],
             payments=[_payment("PAY-1", "MADAR-ORD-1", amount=40, method="cash")],
             orders=[_order("MADAR-ORD-1", erp_sales_order="SAL-ORD-1")],
+            sales_orders=[_sales_order("SAL-ORD-1", customer="Customer MADAR-ORD-1")],
+            accounts=[
+                _account("1110 - Cash - T", "Cash"),
+                _account("1310 - Receivable - T", "Receivable"),
+            ],
         )
 
         denied_result = payment_erp_sync_service.list_payment_sync_items(
@@ -170,6 +225,29 @@ def _payment(
     }
 
 
+def _sales_order(name, *, customer, company="test", currency="SAR", conversion_rate=1.0, debit_to=""):
+    return {
+        "doctype": "Sales Order",
+        "name": name,
+        "customer": customer,
+        "company": company,
+        "currency": currency,
+        "conversion_rate": conversion_rate,
+        "debit_to": debit_to,
+    }
+
+
+def _account(name, account_type, *, currency="SAR", company="test"):
+    return {
+        "doctype": "Account",
+        "name": name,
+        "account_type": account_type,
+        "account_currency": currency,
+        "company": company,
+        "is_group": 0,
+    }
+
+
 class FakeDoc:
     def __init__(self, fake_frappe, values):
         self._fake_frappe = fake_frappe
@@ -192,10 +270,21 @@ class FakeDoc:
 
 
 class FakeFrappe:
-    def __init__(self, *, roles=None, payments=None, orders=None, fail_payment_entry=False):
+    def __init__(
+        self,
+        *,
+        roles=None,
+        payments=None,
+        orders=None,
+        sales_orders=None,
+        accounts=None,
+        fail_payment_entry=False,
+    ):
         self.roles = roles or ["Madar Accountant"]
         self.payments = list(payments or [])
         self.orders = list(orders or [])
+        self.sales_orders = list(sales_orders or [])
+        self.accounts = list(accounts or [])
         self.payment_entries = []
         self.sales_invoices = []
         self.fail_payment_entry = fail_payment_entry
@@ -220,6 +309,8 @@ class FakeFrappe:
         rows = {
             "Madar Payment": self.payments,
             "Madar Order": self.orders,
+            "Sales Order": self.sales_orders,
+            "Account": self.accounts,
             "Payment Entry": self.payment_entries,
             "Sales Invoice": self.sales_invoices,
         }.get(doctype_or_values, [])
@@ -232,6 +323,8 @@ class FakeFrappe:
         rows = {
             "Madar Payment": self.payments,
             "Madar Order": self.orders,
+            "Sales Order": self.sales_orders,
+            "Account": self.accounts,
             "Payment Entry": self.payment_entries,
             "Sales Invoice": self.sales_invoices,
         }.get(doctype, [])
@@ -239,6 +332,17 @@ class FakeFrappe:
         if order_by:
             rows.sort(key=lambda row: row.get("modified") or row.get("name"), reverse="desc" in order_by)
         return [types.SimpleNamespace(**{field: row.get(field) for field in fields}) for row in rows[:limit]]
+
+    def get_cached_value(self, doctype, name, fieldname):
+        rows = {
+            "Company": [{"doctype": "Company", "name": "test", "default_currency": "SAR"}],
+            "Customer": [],
+            "Account": self.accounts,
+        }.get(doctype, [])
+        for row in rows:
+            if row.get("name") == name:
+                return row.get(fieldname)
+        return None
 
     def insert_doc(self, values):
         if values["doctype"] == "Payment Entry":
