@@ -23,6 +23,18 @@ https://<production-domain>/api/method/madar.api.health.ping
 {"message":{"ok":true,"app":"madar","service":"Madar Frappe Backend"}}
 ```
 
+لـ staging يمكن استخدام السكربت read-only:
+
+```bash
+scripts/monitoring/check_staging_health.sh
+```
+
+راجع التفاصيل والـ exit codes في:
+
+```text
+docs/deployment/12-monitoring-alerting-mvp.md
+```
+
 ## Frappe/Bench Logs
 
 راجع:
@@ -89,6 +101,18 @@ docker logs --tail=200 <redis-container>
 - ERP sync failures > 0 for more than one working hour.
 - Accounting finalization failure.
 - GL Entry count changes outside expected finalization windows.
+
+## سكربتات monitoring الخفيفة
+
+تمت إضافة أدوات read-only يمكن تشغيلها يدويًا الآن أو ربطها لاحقًا بـ cron/monitoring بعد الموافقة:
+
+```bash
+scripts/monitoring/check_staging_health.sh
+scripts/monitoring/check_backup_freshness.sh
+scripts/monitoring/check_erp_sync_status.py
+```
+
+هذه الأدوات لا تحتوي أسرارًا، ولا تنفذ أي mutation، ولا تطبع raw ERP errors. الهدف منها health/freshness/counts فقط.
 
 ## سجلات يجب عدم طباعتها
 

@@ -14,6 +14,10 @@
 - [06-monitoring-logging.md](06-monitoring-logging.md): المراقبة والسجلات والتنبيهات.
 - [07-go-live-checklist.md](07-go-live-checklist.md): قائمة تحقق يوم الإطلاق.
 - [08-post-go-live-checklist.md](08-post-go-live-checklist.md): قائمة ما بعد الإطلاق.
+- [09-backup-restore-drill-report.md](09-backup-restore-drill-report.md): تقرير فحص النسخة الاحتياطية.
+- [10-restore-drill-report.md](10-restore-drill-report.md): تقرير تمرين الاستعادة على موقع منفصل.
+- [11-staging-version-alignment.md](11-staging-version-alignment.md): تقرير محاذاة نسخة staging.
+- [12-monitoring-alerting-mvp.md](12-monitoring-alerting-mvp.md): أساس مراقبة وتنبيهات MVP.
 
 ## قواعد ثابتة
 

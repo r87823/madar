@@ -21,6 +21,8 @@
 - [ ] أول Sales Invoice draft تم.
 - [ ] أول Payment Entry draft تم.
 - [ ] accounting finalization تم فقط بموافقة المحاسبة.
+- [ ] فحص backup freshness تم بنجاح.
+- [ ] فحص ERP sync/accounting backlog تم بنجاح.
 
 ## أول أسبوع
 
@@ -33,6 +35,8 @@
 - [ ] مراجعة performance للدashboard/reports.
 - [ ] مراجعة backup success.
 - [ ] تنفيذ restore drill إذا لم ينفذ قبل الإطلاق.
+- [ ] مراجعة thresholds الخاصة بالتنبيهات وتعديلها حسب التشغيل الفعلي.
+- [ ] تحديد قناة alerting رسمية وتفعيلها بعد مراجعة الأمان.
 
 ## مؤشرات يجب تصعيدها
 
