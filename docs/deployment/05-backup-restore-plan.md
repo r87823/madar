@@ -54,6 +54,50 @@ bench --site <restore-test-site> migrate
 bench restart
 ```
 
+## ضوابط تمرين staging
+
+- لا تستعد فوق staging site الحالي إلا بموافقة صريحة وخطة rollback.
+- الأفضل إنشاء site اختبار منفصل مثل `<restore-test-site>` داخل bench أو داخل bench معزول.
+- إذا كان site الاختبار داخل نفس bench، وثق أنه سيضيف قاعدة بيانات ومجلد site جديدين.
+- حذف site الاختبار بعد التمرين عملية destructive وتحتاج موافقة منفصلة.
+- لا تضع backup files داخل repo.
+- لا تنسخ محتوى `site_config` إلى docs أو tickets لأنه قد يحتوي أسرارًا.
+- قبل وبعد التمرين، تحقق من health endpoint وأعداد مستندات ERP الحساسة:
+  - `GL Entry`
+  - `Delivery Note`
+  - `Stock Entry`
+  - `Sales Invoice`
+  - `Payment Entry`
+
+## نتائج التمارين
+
+- 2026-05-21: تم تنفيذ backup staging بنجاح للموقع `hrms.localhost` ولم يتم تنفيذ restore فوق الموقع الحالي. راجع:
+  `docs/deployment/09-backup-restore-drill-report.md`
+- 2026-05-21: تم تنفيذ restore drill بنجاح على site منفصل باسم `madar-restore-test.localhost`. راجع:
+  `docs/deployment/10-restore-drill-report.md`
+
+## صيغة restore المجربة على staging
+
+الصيغة التالية نجحت على Frappe/Docker staging الحالي:
+
+```bash
+bench new-site madar-restore-test.localhost \
+  --mariadb-root-password "$DB_ROOT_PASSWORD" \
+  --admin-password "$ADMIN_TMP" \
+  --no-mariadb-socket
+
+bench --site madar-restore-test.localhost restore \
+  sites/hrms.localhost/private/backups/<timestamp>-hrms_localhost-database.sql.gz \
+  --mariadb-root-password "$DB_ROOT_PASSWORD" \
+  --with-public-files sites/hrms.localhost/private/backups/<timestamp>-hrms_localhost-files.tar \
+  --with-private-files sites/hrms.localhost/private/backups/<timestamp>-hrms_localhost-private-files.tar
+
+bench --site madar-restore-test.localhost migrate
+bench --site madar-restore-test.localhost clear-cache
+```
+
+ملاحظة: `--no-mariadb-socket` ظهر كخيار deprecated. للجولات القادمة راجع الخيار الأحدث المناسب قبل التنفيذ.
+
 ## التحقق بعد الاستعادة
 
 - [ ] site يعمل.
