@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
+import '../../core/messages/madar_success_messages.dart';
 import '../orders/order_models.dart';
 import 'payment_models.dart';
 
@@ -188,7 +190,7 @@ class _PaymentSectionState extends State<PaymentSection> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -222,12 +224,12 @@ class _PaymentSectionState extends State<PaymentSection> {
               ? result.order!.remainingAmount.toStringAsFixed(2)
               : '';
         }
-        _message = 'تم تحصيل الدفع.';
+        _message = MadarSuccessMessages.paymentCollected;
       });
       await _loadPayments();
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/api/frappe_api_client.dart';
+import '../../../core/errors/madar_error_messages.dart';
 import 'product_models.dart';
 
 class ProductPickerSheet extends StatefulWidget {
@@ -98,7 +99,7 @@ class _ProductPickerSheetState extends State<ProductPickerSheet> {
       });
     } catch (error) {
       setState(() {
-        _error = error.toString();
+        _error = arabicMessageForError(error);
       });
     } finally {
       setState(() {

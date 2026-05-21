@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'work_order_models.dart';
 
 class WorkOrderDetailScreen extends StatefulWidget {
@@ -107,7 +108,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -136,7 +137,7 @@ class _WorkOrderDetailScreenState extends State<WorkOrderDetailScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

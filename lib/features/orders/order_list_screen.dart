@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import '../../core/auth/user_context.dart';
 import 'create_order_screen.dart';
 import 'order_detail_screen.dart';
@@ -88,7 +89,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

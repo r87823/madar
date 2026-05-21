@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'items/order_item_models.dart';
 import 'items/order_items_section.dart';
 import 'items/product_models.dart';
@@ -201,7 +202,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     }
@@ -267,7 +268,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -301,7 +302,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

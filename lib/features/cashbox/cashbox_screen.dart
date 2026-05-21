@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import '../../core/auth/user_context.dart';
 import 'cashbox_models.dart';
 
@@ -149,7 +150,7 @@ class _CashboxScreenState extends State<CashboxScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -177,7 +178,7 @@ class _CashboxScreenState extends State<CashboxScreen> {
       await _load();
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -216,7 +217,7 @@ class _CashboxScreenState extends State<CashboxScreen> {
       await _load();
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     }

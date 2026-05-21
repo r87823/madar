@@ -30,13 +30,41 @@ void main() {
     expect(find.text('تسجيل حضور'), findsOneWidget);
     expect(find.text('تسجيل انصراف'), findsNothing);
   });
+
+  testWidgets('backend attendance error code renders friendly Arabic message', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_screenForState('out_of_work', failCheckIn: true));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('تسجيل حضور'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('أنت مسجل حضور بالفعل'), findsOneWidget);
+    expect(find.text('ALREADY_CHECKED_IN'), findsNothing);
+  });
 }
 
-Widget _screenForState(String state) {
+Widget _screenForState(String state, {bool failCheckIn = false}) {
   final client = FrappeApiClient(
     baseUri: Uri.parse('https://madar-test.r8787m.cc'),
     sessionStore: MemorySessionStore(sid: 'abc123'),
     httpClient: MockClient((request) async {
+      if (request.url.path.endsWith('check_in') && failCheckIn) {
+        return http.Response(
+          jsonEncode({
+            'message': {
+              'ok': false,
+              'data': null,
+              'error': {
+                'code': 'ALREADY_CHECKED_IN',
+                'message': 'ALREADY_CHECKED_IN',
+              },
+            },
+          }),
+          200,
+        );
+      }
       if (request.url.path.endsWith('get_history')) {
         return http.Response(
           jsonEncode({

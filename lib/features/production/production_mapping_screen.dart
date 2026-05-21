@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import '../orders/items/product_models.dart';
 import 'production_mapping_models.dart';
 
@@ -162,7 +163,7 @@ class _ProductionMappingScreenState extends State<ProductionMappingScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -247,7 +248,7 @@ class _ProductionMappingScreenState extends State<ProductionMappingScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

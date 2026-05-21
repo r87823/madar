@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'followup_dashboard_models.dart';
 
 class FollowupDashboardScreen extends StatefulWidget {
@@ -65,7 +66,7 @@ class _FollowupDashboardScreenState extends State<FollowupDashboardScreen> {
           }
           if (snapshot.hasError) {
             return _StateMessage(
-              message: 'تعذر تحميل لوحة المتابعة',
+              message: arabicMessageForError(snapshot.error),
               onRetry: _reload,
             );
           }

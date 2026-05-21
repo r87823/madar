@@ -115,11 +115,35 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('تم الحفظ'), findsOneWidget);
+    expect(find.text('تم حفظ الإعداد بنجاح'), findsOneWidget);
+  });
+
+  testWidgets('settings update error renders mapped Arabic message', (
+    tester,
+  ) async {
+    final client = _client(failUpdate: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: SettingsScreen(apiClient: client),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('setting-payments.allow_overpayment')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('قيمة الإعداد غير صحيحة'), findsOneWidget);
+    expect(find.text('SETTING_VALUE_INVALID'), findsNothing);
   });
 }
 
-FrappeApiClient _client() {
+FrappeApiClient _client({bool failUpdate = false}) {
   return FrappeApiClient(
     baseUri: Uri.parse('https://madar-test.r8787m.cc'),
     sessionStore: MemorySessionStore(sid: 'abc123'),
@@ -128,6 +152,16 @@ FrappeApiClient _client() {
         return _json(_settingsEnvelope());
       }
       if (request.url.path.endsWith('update_setting')) {
+        if (failUpdate) {
+          return _json({
+            'ok': false,
+            'data': null,
+            'error': {
+              'code': 'SETTING_VALUE_INVALID',
+              'message': 'SETTING_VALUE_INVALID',
+            },
+          });
+        }
         return _json({
           'ok': true,
           'data': {

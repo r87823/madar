@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'accounting_review_models.dart';
 import 'erp_sync_models.dart';
 import 'payment_sync_models.dart';
@@ -214,7 +215,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -242,7 +243,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -270,7 +271,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -298,7 +299,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -326,7 +327,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -356,7 +357,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -387,7 +388,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -443,7 +444,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -476,7 +477,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -511,7 +512,7 @@ class _ErpSyncReviewScreenState extends State<ErpSyncReviewScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../api/frappe_api_client.dart';
+import '../errors/madar_error_messages.dart';
 import 'user_context.dart';
 
 class AuthController extends ChangeNotifier {
@@ -25,8 +26,8 @@ class AuthController extends ChangeNotifier {
     try {
       await _apiClient.login(username: username.trim(), password: password);
       _context = await _apiClient.getContext();
-    } catch (_) {
-      _errorMessage = 'تعذر تسجيل الدخول. تأكد من البريد وكلمة المرور.';
+    } catch (error) {
+      _errorMessage = arabicMessageForError(error);
     } finally {
       _setLoading(false);
     }

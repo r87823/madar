@@ -1079,9 +1079,7 @@ class FrappeApiClient {
         ? message.map((key, value) => MapEntry('$key', value))
         : payload;
     if (map['ok'] == false) {
-      final error = map['error'];
-      final message = error is Map ? error['message'] : null;
-      throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
+      throw _exceptionFromEnvelope(map);
     }
     return AttendanceStatus.fromEnvelope(map);
   }
@@ -1093,9 +1091,7 @@ class FrappeApiClient {
         ? message.map((key, value) => MapEntry('$key', value))
         : payload;
     if (map['ok'] == false) {
-      final error = map['error'];
-      final message = error is Map ? error['message'] : null;
-      throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
+      throw _exceptionFromEnvelope(map);
     }
     return AttendanceHistory.fromEnvelope(map);
   }
@@ -1107,9 +1103,7 @@ class FrappeApiClient {
         ? message.map((key, value) => MapEntry('$key', value))
         : payload;
     if (map['ok'] == false) {
-      final error = map['error'];
-      final message = error is Map ? error['message'] : null;
-      throw FrappeApiException(message?.toString() ?? 'تعذر تنفيذ العملية');
+      throw _exceptionFromEnvelope(map);
     }
     return map;
   }
@@ -1137,7 +1131,41 @@ class FrappeApiClient {
 
   void _throwIfFailed(http.Response response, {required String fallback}) {
     if (response.statusCode >= 200 && response.statusCode < 300) return;
-    throw FrappeApiException(fallback, statusCode: response.statusCode);
+    try {
+      final payload = _decodeJson(response);
+      final message = payload['message'];
+      final map = message is Map
+          ? message.map((key, value) => MapEntry('$key', value))
+          : payload;
+      throw _exceptionFromEnvelope(
+        map,
+        fallback: fallback,
+        statusCode: response.statusCode,
+      );
+    } on FormatException {
+      throw FrappeApiException(fallback, statusCode: response.statusCode);
+    }
+  }
+
+  FrappeApiException _exceptionFromEnvelope(
+    Map<String, dynamic> map, {
+    String fallback = 'تعذر تنفيذ العملية',
+    int? statusCode,
+  }) {
+    final error = map['error'];
+    if (error is Map) {
+      final code = error['code']?.toString();
+      final message = error['message']?.toString();
+      return FrappeApiException(
+        message == null || message.isEmpty ? fallback : message,
+        code: code == null || code.isEmpty ? message : code,
+        statusCode: statusCode,
+      );
+    }
+    if (error is String && error.isNotEmpty) {
+      return FrappeApiException(error, code: error, statusCode: statusCode);
+    }
+    return FrappeApiException(fallback, statusCode: statusCode);
   }
 
   String? _extractSid(String? setCookie) {
@@ -1148,9 +1176,10 @@ class FrappeApiClient {
 }
 
 class FrappeApiException implements Exception {
-  const FrappeApiException(this.message, {this.statusCode});
+  const FrappeApiException(this.message, {this.code, this.statusCode});
 
   final String message;
+  final String? code;
   final int? statusCode;
 
   @override

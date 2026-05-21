@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'order_models.dart';
 
 class ApprovalQueueScreen extends StatefulWidget {
@@ -91,7 +92,7 @@ class _ApprovalQueueScreenState extends State<ApprovalQueueScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -163,7 +164,7 @@ class _ApprovalQueueScreenState extends State<ApprovalQueueScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

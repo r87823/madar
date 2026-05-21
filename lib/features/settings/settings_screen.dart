@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
+import '../../core/messages/madar_success_messages.dart';
 import 'settings_models.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -32,15 +34,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await widget.apiClient.updateSetting(setting.settingKey, value);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم الحفظ')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(MadarSuccessMessages.settingSaved)),
+      );
       await _reload();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تعذر حفظ الإعداد')));
+      ).showSnackBar(SnackBar(content: Text(arabicMessageForError(error))));
     }
   }
 
@@ -55,7 +57,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return const _StateMessage(message: 'غير مسموح');
+            return _StateMessage(
+              message: arabicMessageForError(snapshot.error),
+            );
           }
           final items = snapshot.data?.items ?? const <MadarSetting>[];
           if (items.isEmpty) {
@@ -76,7 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ];
           final orderedEntries = [
             for (final category in categoryOrder)
-              if (grouped.containsKey(category)) MapEntry(category, grouped[category]!),
+              if (grouped.containsKey(category))
+                MapEntry(category, grouped[category]!),
             for (final entry in grouped.entries)
               if (!categoryOrder.contains(entry.key)) entry,
           ];

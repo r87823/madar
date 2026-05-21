@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'notification_models.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -11,7 +12,8 @@ class NotificationScreen extends StatefulWidget {
   });
 
   final FrappeApiClient apiClient;
-  final Future<bool> Function(MadarNotification notification)? onOpenNotification;
+  final Future<bool> Function(MadarNotification notification)?
+  onOpenNotification;
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -40,7 +42,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       _reload();
       return true;
     } catch (error) {
-      setState(() => _error = error.toString());
+      setState(() => _error = arabicMessageForError(error));
       return false;
     }
   }
@@ -48,7 +50,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<void> _open(MadarNotification notification) async {
     final marked = await _markRead(notification);
     if (!marked || notification.routeKey == 'none') return;
-    final handled = await (widget.onOpenNotification?.call(notification) ?? Future.value(false));
+    final handled =
+        await (widget.onOpenNotification?.call(notification) ??
+            Future.value(false));
     if (!mounted) return;
     if (!handled) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,7 +68,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       await widget.apiClient.markAllNotificationsRead();
       _reload();
     } catch (error) {
-      setState(() => _error = error.toString());
+      setState(() => _error = arabicMessageForError(error));
     }
   }
 

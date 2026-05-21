@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
+import '../../core/messages/madar_success_messages.dart';
 import 'attendance_status.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -113,7 +115,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -138,12 +140,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         _status = status;
         _history = history;
         _message = checkIn
-            ? 'تم تسجيل الحضور بنجاح.'
-            : 'تم تسجيل الانصراف بنجاح.';
+            ? MadarSuccessMessages.attendanceCheckIn
+            : MadarSuccessMessages.attendanceCheckOut;
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

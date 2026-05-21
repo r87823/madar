@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import '../payments/payment_section.dart';
 import 'delivery_batch_models.dart';
 
@@ -92,7 +93,7 @@ class _DeliveryBatchListScreenState extends State<DeliveryBatchListScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -239,7 +240,7 @@ class _DeliveryBatchDetailScreenState extends State<DeliveryBatchDetailScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -279,7 +280,7 @@ class _DeliveryBatchDetailScreenState extends State<DeliveryBatchDetailScreen> {
       await _loadBatch();
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import '../../core/auth/user_context.dart';
 import 'order_models.dart';
 
@@ -158,7 +159,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       Navigator.of(context).pop<MadarOrder>(order);
     } catch (error) {
       setState(() {
-        _error = error.toString();
+        _error = arabicMessageForError(error);
       });
     } finally {
       if (mounted) {

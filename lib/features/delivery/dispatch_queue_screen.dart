@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import '../orders/order_models.dart';
 
 class DispatchQueueScreen extends StatefulWidget {
@@ -144,7 +145,7 @@ class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
       });
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {
@@ -193,7 +194,7 @@ class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
       await _loadQueue();
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     }
@@ -225,7 +226,7 @@ class _DispatchQueueScreenState extends State<DispatchQueueScreen> {
       await _loadQueue();
     } catch (error) {
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

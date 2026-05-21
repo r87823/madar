@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'work_order_detail_screen.dart';
 import 'work_order_models.dart';
 
@@ -94,7 +95,7 @@ class _WorkOrderListScreenState extends State<WorkOrderListScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _message = error.toString();
+        _message = arabicMessageForError(error);
         _isError = true;
       });
     } finally {

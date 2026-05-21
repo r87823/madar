@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/frappe_api_client.dart';
+import '../../core/errors/madar_error_messages.dart';
 import 'reports_models.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -103,7 +104,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return const _StateMessage(message: 'تعذر تحميل التقرير');
+                  return _StateMessage(
+                    message: arabicMessageForError(snapshot.error),
+                  );
                 }
                 final result = snapshot.data;
                 if (result == null || result.items.isEmpty) {
