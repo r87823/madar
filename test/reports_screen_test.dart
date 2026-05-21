@@ -50,6 +50,7 @@ void main() {
       ),
     );
 
+    await tester.ensureVisible(find.text('التقارير'));
     await tester.tap(find.text('التقارير'));
     await tester.pump();
 

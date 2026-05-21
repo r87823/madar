@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api/frappe_api_client.dart';
 import '../core/auth/auth_controller.dart';
 import '../core/auth/user_context.dart';
+import '../core/theme/madar_theme.dart';
 import '../features/attendance/attendance_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/accounting/erp_sync_review_screen.dart';
@@ -53,23 +54,7 @@ class _MadarAppState extends State<MadarApp> {
       title: 'Madar',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E6F68)),
-        scaffoldBackgroundColor: const Color(0xFFF6F8F7),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-        cardTheme: const CardThemeData(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-          ),
-        ),
-      ),
+      theme: MadarTheme.light(),
       builder: (context, child) {
         return Directionality(
           textDirection: TextDirection.rtl,

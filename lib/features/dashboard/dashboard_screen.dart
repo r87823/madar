@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/auth/user_context.dart';
 import '../../core/permissions/dashboard_cards.dart';
 import '../../core/widgets/info_section.dart';
+import '../../core/widgets/madar_ui.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({
@@ -46,103 +47,218 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext buildContext) {
     final cards = DashboardCards.visibleFor(context.permissions.toSet());
     final colorScheme = Theme.of(buildContext).colorScheme;
+    final groups = _groupCards(cards);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('لوحة مدار'),
-        actions: [
-          _NotificationIcon(
-            unreadCount: unreadNotifications,
-            onPressed: onOpenNotifications,
-          ),
-          IconButton(
-            tooltip: 'تسجيل الخروج',
-            onPressed: onLogout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
-      body: ListView(
+    return MadarAppScaffold(
+      title: 'لوحة مدار',
+      actions: [
+        _NotificationIcon(
+          unreadCount: unreadNotifications,
+          onPressed: onOpenNotifications,
+        ),
+        IconButton(
+          tooltip: 'تسجيل الخروج',
+          onPressed: onLogout,
+          icon: const Icon(Icons.logout),
+        ),
+      ],
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        children: [
-          Card(
-            color: colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.fullName.isEmpty ? context.user : context.fullName,
-                    style: Theme.of(buildContext).textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(context.user),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: context.roles
-                        .map((role) => Chip(label: Text(role)))
-                        .toList(growable: false),
-                  ),
-                ],
+        child: Column(
+          children: [
+            Card(
+              color: colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      child: Text(_initials(context.fullName, context.user)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.fullName.isEmpty
+                                ? context.user
+                                : context.fullName,
+                            style: Theme.of(buildContext)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(context.user),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: context.roles
+                                .map((role) => Chip(label: Text(role)))
+                                .toList(growable: false),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          _ContextGrid(userContext: context),
-          const SizedBox(height: 20),
-          Text(
-            'المهام المتاحة',
-            style: Theme.of(
-              buildContext,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final crossAxisCount = width >= 980
-                  ? 4
-                  : width >= 680
-                  ? 3
-                  : 2;
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: cards.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: width < 520 ? 1.05 : 1.45,
+            const SizedBox(height: 16),
+            _ContextGrid(userContext: context),
+            const SizedBox(height: 20),
+            ...groups.entries.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 18),
+                child: _DashboardGroup(
+                  title: entry.key,
+                  cards: entry.value,
+                  onOpenAttendance: onOpenAttendance,
+                  onOpenOrders: onOpenOrders,
+                  onOpenApprovalQueue: onOpenApprovalQueue,
+                  onOpenErpSyncReview: onOpenErpSyncReview,
+                  onOpenProductionMappings: onOpenProductionMappings,
+                  onOpenWorkOrders: onOpenWorkOrders,
+                  onOpenFollowupDashboard: onOpenFollowupDashboard,
+                  onOpenReports: onOpenReports,
+                  onOpenSettings: onOpenSettings,
+                  onOpenDispatchQueue: onOpenDispatchQueue,
+                  onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
+                  onOpenCashbox: onOpenCashbox,
                 ),
-                itemBuilder: (context, index) {
-                  return _DashboardCard(
-                    card: cards[index],
-                    onOpenAttendance: onOpenAttendance,
-                    onOpenOrders: onOpenOrders,
-                    onOpenApprovalQueue: onOpenApprovalQueue,
-                    onOpenErpSyncReview: onOpenErpSyncReview,
-                    onOpenProductionMappings: onOpenProductionMappings,
-                    onOpenWorkOrders: onOpenWorkOrders,
-                    onOpenFollowupDashboard: onOpenFollowupDashboard,
-                    onOpenReports: onOpenReports,
-                    onOpenSettings: onOpenSettings,
-                    onOpenDispatchQueue: onOpenDispatchQueue,
-                    onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
-                    onOpenCashbox: onOpenCashbox,
-                  );
-                },
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _DashboardGroup extends StatelessWidget {
+  const _DashboardGroup({
+    required this.title,
+    required this.cards,
+    required this.onOpenAttendance,
+    required this.onOpenOrders,
+    required this.onOpenApprovalQueue,
+    required this.onOpenErpSyncReview,
+    required this.onOpenProductionMappings,
+    required this.onOpenWorkOrders,
+    this.onOpenFollowupDashboard,
+    this.onOpenReports,
+    this.onOpenSettings,
+    this.onOpenDispatchQueue,
+    this.onOpenMyDeliveryBatches,
+    this.onOpenCashbox,
+  });
+
+  final String title;
+  final List<DashboardCardDefinition> cards;
+  final VoidCallback onOpenAttendance;
+  final VoidCallback onOpenOrders;
+  final VoidCallback onOpenApprovalQueue;
+  final VoidCallback onOpenErpSyncReview;
+  final VoidCallback onOpenProductionMappings;
+  final VoidCallback onOpenWorkOrders;
+  final VoidCallback? onOpenFollowupDashboard;
+  final VoidCallback? onOpenReports;
+  final VoidCallback? onOpenSettings;
+  final VoidCallback? onOpenDispatchQueue;
+  final VoidCallback? onOpenMyDeliveryBatches;
+  final VoidCallback? onOpenCashbox;
+
+  @override
+  Widget build(BuildContext context) {
+    return MadarSectionCard(
+      title: title,
+      subtitle: _groupSubtitle(title),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final crossAxisCount = width >= 980
+              ? 4
+              : width >= 680
+              ? 3
+              : 1;
+          final cardWidth =
+              (width - (12 * (crossAxisCount - 1))) / crossAxisCount;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: cards
+                .map(
+                  (card) => SizedBox(
+                    width: cardWidth,
+                    child: _DashboardCard(
+                      card: card,
+                      onOpenAttendance: onOpenAttendance,
+                      onOpenOrders: onOpenOrders,
+                      onOpenApprovalQueue: onOpenApprovalQueue,
+                      onOpenErpSyncReview: onOpenErpSyncReview,
+                      onOpenProductionMappings: onOpenProductionMappings,
+                      onOpenWorkOrders: onOpenWorkOrders,
+                      onOpenFollowupDashboard: onOpenFollowupDashboard,
+                      onOpenReports: onOpenReports,
+                      onOpenSettings: onOpenSettings,
+                      onOpenDispatchQueue: onOpenDispatchQueue,
+                      onOpenMyDeliveryBatches: onOpenMyDeliveryBatches,
+                      onOpenCashbox: onOpenCashbox,
+                    ),
+                  ),
+                )
+                .toList(growable: false),
+          );
+        },
+      ),
+    );
+  }
+}
+
+String _groupSubtitle(String title) {
+  switch (title) {
+    case 'الموظف':
+      return 'حضورك وخدماتك اليومية';
+    case 'التشغيل':
+      return 'الطلبات والإنتاج والاعتمادات';
+    case 'التوصيل':
+      return 'الإرسال والدفعات المسندة';
+    case 'المالية':
+      return 'المدفوعات والصندوق والمزامنة';
+    case 'الإدارة':
+      return 'المتابعة والتقارير والإعدادات';
+    default:
+      return '';
+  }
+}
+
+Map<String, List<DashboardCardDefinition>> _groupCards(
+  List<DashboardCardDefinition> cards,
+) {
+  const order = ['الموظف', 'التشغيل', 'التوصيل', 'المالية', 'الإدارة'];
+  final grouped = <String, List<DashboardCardDefinition>>{};
+  for (final group in order) {
+    final groupCards = cards.where((card) => card.group == group).toList();
+    if (groupCards.isNotEmpty) grouped[group] = groupCards;
+  }
+  for (final card in cards) {
+    if (!order.contains(card.group)) {
+      grouped.putIfAbsent(card.group, () => []).add(card);
+    }
+  }
+  return grouped;
+}
+
+String _initials(String fullName, String fallback) {
+  final source = fullName.trim().isEmpty ? fallback.trim() : fullName.trim();
+  if (source.isEmpty) return 'م';
+  return source.characters.take(1).toString().toUpperCase();
 }
 
 class _NotificationIcon extends StatelessWidget {
@@ -342,25 +458,32 @@ class _DashboardCard extends StatelessWidget {
             context,
           ).showSnackBar(SnackBar(content: Text('${card.title}: قريبًا')));
         },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(card.icon, color: colorScheme.primary, size: 30),
-              const Spacer(),
-              Text(
-                card.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'قريبًا',
-                style: TextStyle(color: colorScheme.onSurfaceVariant),
-              ),
-            ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 132),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(card.icon, color: colorScheme.primary, size: 30),
+                const SizedBox(height: 12),
+                Text(
+                  card.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  card.subtitle,
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

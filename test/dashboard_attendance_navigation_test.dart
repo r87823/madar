@@ -77,4 +77,41 @@ void main() {
 
     expect(opened, isTrue);
   });
+
+  testWidgets('dashboard groups visible cards by operational area', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 3000));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: DashboardScreen(
+            context: const UserContext(
+              user: 'admin@example.com',
+              fullName: 'Admin',
+              roles: ['Madar Admin'],
+              permissions: ['system.full_access'],
+              scopes: ScopeContext(branchNames: ['*'], departmentNames: ['*']),
+            ),
+            onLogout: () async {},
+            onOpenAttendance: () {},
+            onOpenOrders: () {},
+            onOpenApprovalQueue: () {},
+            onOpenErpSyncReview: () {},
+            onOpenProductionMappings: () {},
+            onOpenWorkOrders: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('الموظف'), findsOneWidget);
+    expect(find.text('التشغيل'), findsOneWidget);
+    expect(find.text('التوصيل'), findsOneWidget);
+    expect(find.text('المالية'), findsOneWidget);
+    expect(find.text('الإدارة'), findsWidgets);
+    expect(find.text('لوحة المتابعة'), findsOneWidget);
+    await tester.binding.setSurfaceSize(null);
+  });
 }

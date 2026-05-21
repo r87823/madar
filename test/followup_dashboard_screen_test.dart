@@ -56,6 +56,7 @@ void main() {
       ),
     );
 
+    await tester.ensureVisible(find.text('لوحة المتابعة'));
     await tester.tap(find.text('لوحة المتابعة'));
     await tester.pump();
 
